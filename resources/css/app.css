@@ -1,0 +1,37 @@
+/* 1. Importación maestra de Tailwind v4 */
+@import "tailwindcss";
+
+/* 2. Definición del Tema Creativo (Sustituye al config.js en v4) */
+@theme {
+  --color-start-dark: #020617;
+  --color-neon-cyan: #22D3EE;
+  --color-neon-purple: #A855F7;
+  --color-neon-rose: #FB7185;
+
+  --animate-glow-pulse: glow 2s infinite alternate;
+  --animate-float: float 3s ease-in-out infinite;
+
+  @keyframes glow {
+    0% { filter: drop-shadow(0 0 5px #22D3EE); }
+    100% { filter: drop-shadow(0 0 20px #A855F7); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+  }
+}
+
+/* 3. Estilos Base Globales */
+@layer base {
+  body {
+    @apply bg-start-dark text-white font-sans antialiased;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+/* 4. Utilidades personalizadas (opcional) */
+.text-outline {
+  -webkit-text-stroke: 1px rgba(34, 211, 238, 0.5);
+}
