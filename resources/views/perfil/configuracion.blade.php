@@ -6,14 +6,31 @@
     <h1 class="font-orbitron text-3xl font-black text-white mb-2 uppercase tracking-tighter">
         Configuración de <span class="text-accent">Terminal</span>
     </h1>
-    <p class="text-gray-500 text-[10px] uppercase tracking-[0.3em] mb-10">Personalización de Interfaz y Datos de Operador</p>
+    <p class="text-gray-500 text-[10px] uppercase tracking-[0.3em] mb-6">Personalización de Interfaz y Datos de Operador</p>
+
+    {{-- [SENSORES DE ESTADO]: Bloque de Alertas para Feedback visual --}}
+    @if (session('success'))
+        <div class="mb-6 p-4 bg-accent/20 border border-accent text-accent text-[10px] font-black uppercase tracking-widest rounded-xl animate-pulse">
+            <i class="fa-solid fa-check-double mr-2"></i> {{ session('success') }}
+        </div>
+    @endif
+
+    @if ($errors->any())
+        <div class="mb-6 p-4 bg-red-500/20 border border-red-500 text-red-500 text-[10px] font-black uppercase tracking-widest rounded-xl">
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li><i class="fa-solid fa-triangle-exclamation mr-2"></i> {{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
         {{-- COLUMNA IZQUIERDA: IDENTIDAD Y TEMAS --}}
         <div class="space-y-6">
 
-            {{-- AVATAR (Formulario Independiente para carga instantánea) --}}
+            {{-- AVATAR --}}
             <div class="bg-black/40 border border-white/10 backdrop-blur-xl p-6 rounded-2xl text-center relative overflow-hidden group">
                 <div class="absolute inset-0 bg-accent/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
@@ -41,7 +58,7 @@
                 <p class="text-[9px] text-accent uppercase font-black tracking-[0.2em] mt-1">{{ auth()->user()->rol }}</p>
             </div>
 
-            {{-- SELECCIÓN DE TEMA (Actualización Directa) --}}
+            {{-- SELECCIÓN DE TEMA --}}
             <div class="bg-black/40 border border-white/10 backdrop-blur-xl p-6 rounded-2xl">
                 <h3 class="text-white text-[10px] font-black uppercase mb-4 tracking-widest flex items-center gap-2">
                     <i class="fa-solid fa-palette text-accent"></i> Atmósfera de Sistema
@@ -98,8 +115,9 @@
 
                 <form action="{{ route('perfil.feedback') }}" method="POST">
                     @csrf
-                    <textarea name="comentario" required placeholder="Escriba aquí su reporte..." rows="3"
-                              class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-accent focus:ring-0 transition-all outline-none placeholder:text-gray-700"></textarea>
+                    {{-- [REPARACIÓN]: Cambiamos el name="comentario" por name="mensaje" para que el controlador lo reciba --}}
+                    <textarea name="mensaje" required placeholder="Escriba aquí su reporte (mínimo 3 caracteres)..." rows="3"
+                              class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-accent focus:ring-0 transition-all outline-none placeholder:text-gray-700">{{ old('mensaje') }}</textarea>
 
                     <button type="submit" class="mt-4 border border-accent text-accent px-6 py-2 rounded-lg text-[9px] font-black uppercase hover:bg-accent hover:text-white transition-all shadow-[0_0_10px_rgba(var(--neon-accent),0.1)]">
                         Transmitir Feedback

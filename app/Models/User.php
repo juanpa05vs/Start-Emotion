@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Spatie\Permission\Traits\HasRoles; // El motor de seguridad que instalamos
+use Spatie\Permission\Traits\HasRoles; // El motor de seguridad Alpha
 
 class User extends Authenticatable
 {
@@ -18,8 +18,6 @@ class User extends Authenticatable
 
     /**
      * Campos que se pueden llenar de forma masiva.
-     * [BIO-SYNC]: Incluimos 'rol' de nuevo por si aún lo usas en tu DB
-     * como respaldo visual o en el registro inicial.
      */
     protected $fillable = [
         'nombre',
@@ -47,26 +45,32 @@ class User extends Authenticatable
     }
 
     /**
-     * RELACIÓN: Fundamental para el Calendario y el Análisis Neural.
+     * RELACIÓN: Sincronizada con la llave foránea 'user_id'.
+     * [REPARACIÓN]: Cambiamos 'usuario_id' a 'user_id' para coincidir con la migración.
      */
     public function emociones()
     {
-        return $this->hasMany(RegistroEmocion::class, 'usuario_id');
+        // Apuntamos al modelo RegistroEmocion usando la FK correcta: user_id
+        return $this->hasMany(RegistroEmocion::class, 'user_id');
     }
 
     /**
      * HELPER DE NIVEL ALPHA (esAdmin)
      * [SEGURIDAD]: Verifica el acceso administrativo de forma robusta.
-     * [PSICOLOGÍA]: Reduce la carga cognitiva al leer el código.
      */
+    public function feedbacks()
+    {
+        return $this->hasMany(Feedback::class, 'user_id');
+    }
+
     public function esAdmin()
     {
-        // 1. Intenta verificar por la columna 'rol' (si existe en tu tabla usuarios)
+        // 1. Verifica por la columna 'rol' (para compatibilidad visual en BD)
         if ($this->rol && trim(strtolower($this->rol)) === 'administrador') {
             return true;
         }
 
-        // 2. Si no, verifica mediante el sistema de Spatie (Tablas roles/permissions)
+        // 2. Verifica mediante el sistema de Spatie (Roles de seguridad)
         return $this->hasRole('Administrador');
     }
 }

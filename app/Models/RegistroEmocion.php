@@ -18,7 +18,7 @@ class RegistroEmocion extends Model
      * Capa de Lógica de Negocio[cite: 153].
      */
     protected $fillable = [
-        'usuario_id',
+        'user_id',
         'emocion',
         'energia',
         'nivel_estres_estimado', // Requerido para el Bio-HUD [cite: 216]

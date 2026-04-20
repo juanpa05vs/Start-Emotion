@@ -3,16 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\Feedback; // 👈 Importamos el nuevo modelo
+use App\Models\Feedback;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Auth;
 
 class UsuarioController extends Controller
 {
     /**
      * Muestra la lista de todos los usuarios registrados.
-     * [OPTIMIZACIÓN]: Eager Loading de roles para evitar el problema N+1.
      */
     public function index()
     {
@@ -20,12 +19,12 @@ class UsuarioController extends Controller
             return redirect()->route('dashboard')->with('error', 'Nivel Alpha requerido.');
         }
 
-        $usuarios = User::with('roles')->get();
+        $usuarios = User::all();
         return view('usuarios.index', compact('usuarios'));
     }
 
     /**
-     * GESTIÓN DE PRIVILEGIOS: Sincronización de Spatie.
+     * GESTIÓN DE PRIVILEGIOS: Sincronización de Rangos.
      */
     public function updateRole(Request $request, User $user)
     {
@@ -36,18 +35,21 @@ class UsuarioController extends Controller
         $request->validate(['rol' => 'required|in:Administrador,jugador']);
 
         try {
-            $user->update(['rol' => $request->rol]);
-            $user->syncRoles([$request->rol]);
+            $user->rol = $request->rol;
+            $user->save();
 
-            return redirect()->route('usuarios.index')
-                             ->with('success', "Rango de {$user->nombre} actualizado.");
+            if (method_exists($user, 'syncRoles')) {
+                $user->syncRoles([$request->rol]);
+            }
+
+            return redirect()->route('usuarios.index')->with('success', "Rango actualizado exitosamente.");
         } catch (\Exception $e) {
-            return redirect()->route('usuarios.index')->with('error', 'Error en sincronización.');
+            return redirect()->route('usuarios.index')->with('error', 'Fallo en la sincronización de protocolos.');
         }
     }
 
     /**
-     * PURGA DE OPERADOR: Eliminación física y lógica.
+     * PURGA DE OPERADOR: Eliminación de registros.
      */
     public function destroy(User $user)
     {
@@ -56,15 +58,15 @@ class UsuarioController extends Controller
         }
 
         if ($user->avatar) {
-            Storage::delete('public/' . $user->avatar);
+            Storage::disk('public')->delete($user->avatar);
         }
 
         $user->delete();
-        return redirect()->route('usuarios.index')->with('success', 'Operador purgado.');
+        return redirect()->route('usuarios.index')->with('success', 'Operador purgado del sistema.');
     }
 
     /**
-     * TERMINAL DE CONFIGURACIÓN: Carga de UI.
+     * TERMINAL DE CONFIGURACIÓN.
      */
     public function configuracion()
     {
@@ -72,52 +74,56 @@ class UsuarioController extends Controller
     }
 
     /**
-     * ACTUALIZACIÓN DE PERFIL: Gestión de Identidad y Estética.
+     * ACTUALIZACIÓN DE PERFIL: Gestión de Identidad.
      */
     public function updatePerfil(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         $request->validate([
-            'nombre' => 'required|string|max:255',
-            'correo' => 'required|email|unique:usuarios,correo,' . $user->id,
+            'nombre' => 'nullable|string|max:255',
+            'correo' => 'nullable|email|unique:usuarios,correo,' . $user->id,
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'tema'   => 'nullable|in:blue,rose,amber,purple'
         ]);
 
-        $data = $request->only(['nombre', 'correo', 'tema']);
+        if ($request->has('tema')) { $user->tema = $request->tema; }
+        if ($request->has('nombre')) { $user->nombre = $request->nombre; }
+        if ($request->has('correo')) { $user->correo = $request->correo; }
 
         if ($request->hasFile('avatar')) {
             if ($user->avatar) {
-                Storage::delete('public/' . $user->avatar);
+                Storage::disk('public')->delete($user->avatar);
             }
-            $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $user->avatar = $path;
         }
 
-        $user->update($data);
+        $user->save();
 
-        return redirect()->route('perfil.config')->with('success', 'TERMINAL ACTUALIZADA: Protocolos sincronizados.');
+        return redirect()->route('perfil.config')->with('success', 'TERMINAL SINCRONIZADA: Identidad actualizada.');
     }
 
     /**
-     * PROTOCOLO DE MEJORA: Persistencia de Feedback en DB.
+     * PROTOCOLO DE MEJORA: Persistencia de Feedback.
      */
     public function storeFeedback(Request $request)
     {
-        $request->validate(['comentario' => 'required|string|min:10']);
-
-        // [INGENIERÍA] Guardamos el reporte vinculado al ID del usuario actual
-        Feedback::create([
-            'user_id' => auth()->id(),
-            'comentario' => $request->comentario,
-            'estado' => 'pendiente'
+        $request->validate([
+            'mensaje' => 'required|string|min:3|max:1000'
         ]);
 
-        return redirect()->route('perfil.config')->with('success', 'REPORTE INDEXADO: Tu sugerencia ha sido guardada en la base de datos.');
+        Feedback::create([
+            'user_id'    => auth()->id(),
+            'comentario' => $request->mensaje,
+            'estado'     => 'PENDIENTE'
+        ]);
+
+        return redirect()->route('perfil.config')->with('success', 'REPORTE INDEXADO: El Sector Alpha lo revisará pronto.');
     }
 
     /**
-     * MONITOR DE FEEDBACK (Vista Alpha): Solo para Administradores.
+     * MONITOR DE FEEDBACK: Visualización para Administradores.
      */
     public function verFeedback()
     {
@@ -127,5 +133,27 @@ class UsuarioController extends Controller
 
         $reportes = Feedback::with('user')->latest()->get();
         return view('admin.feedback', compact('reportes'));
+    }
+
+    /**
+     * PURGA DE FEEDBACK: Elimina un reporte del monitor.
+     */
+    public function destroyFeedback(Feedback $feedback)
+    {
+        if (!auth()->user()->esAdmin()) { return abort(403); }
+
+        $feedback->delete();
+        return back()->with('success', 'Reporte eliminado del monitor.');
+    }
+
+    /**
+     * ACTUALIZACIÓN DE PROTOCOLO: Marca un feedback como resuelto.
+     */
+    public function updateFeedbackStatus(Feedback $feedback)
+    {
+        if (!auth()->user()->esAdmin()) { return abort(403); }
+
+        $feedback->update(['estado' => 'resuelto']);
+        return back()->with('success', 'Protocolo finalizado y archivado.');
     }
 }

@@ -5,13 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\RegistroEmocion;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\Carbon; // IMPORTANTE: Para el manejo de fechas
-use Carbon\CarbonPeriod; // IMPORTANTE: Para generar el rango del calendario
+use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 
 class EmocionController extends Controller
 {
     /**
      * CAPA DE LÓGICA: Captura de datos con Motor de Análisis Neural Humano.
+     * [REPARACIÓN]: Se actualizó 'usuario_id' a 'user_id' para sincronizar con la BD.
      */
     public function store(Request $request)
     {
@@ -29,8 +30,9 @@ class EmocionController extends Controller
             $request->contexto
         );
 
+        // --- EL PUNTO CRÍTICO DE REPARACIÓN ---
         RegistroEmocion::create([
-            'usuario_id'            => auth()->id(),
+            'user_id'               => auth()->id(), // ✅ Corregido: user_id
             'emocion'               => $request->emocion,
             'energia'               => $request->energia,
             'nivel_estres_estimado' => $analisis['estres'],
@@ -44,16 +46,17 @@ class EmocionController extends Controller
     }
 
     /**
-     * MOTOR DE ANÁLISIS NEURAL (Adaptado para todo público)
+     * MOTOR DE ANÁLISIS NEURAL
      */
     private function motorAnalisisNeural($emocion, $energia, $obs, $ctx)
     {
-        // NIVEL 1: PREDICCIÓN DE FATIGA (Análisis Longitudinal)
+        // NIVEL 1: PREDICCIÓN DE FATIGA
+        // Usamos la relación definida en User.php que ya está corregida
         $ultimosRegistros = auth()->user()->emociones()->latest()->take(3)->pluck('energia');
         $promedioEnergia = $ultimosRegistros->count() > 0 ? $ultimosRegistros->avg() : $energia;
         $alertaBurnout = ($promedioEnergia < 40 && $energia < 40);
 
-        // NIVEL 2: NLP UNIVERSAL (Diccionario Estudiantil General del TESVB)
+        // NIVEL 2: NLP UNIVERSAL (Diccionario TESVB)
         $estresPorTexto = 0;
         $lexicoEstudiantil = [
             'examen'       => 15,
@@ -80,11 +83,9 @@ class EmocionController extends Controller
             default    => 0,
         };
 
-        // CÁLCULO DE ESTRÉS HÍBRIDO
         $estresBase = $this->calcularEstresSimulado($emocion, $energia);
         $estresFinal = min(100, $estresBase + $estresPorTexto + $ajusteContexto);
 
-        // NIVEL 4: ENSAMBLADOR NEURAL UNIVERSAL (Recomendaciones amigables)
         $recomendacion = $this->ensamblarRecomendacionNeural($emocion, $energia, $estresFinal, $ctx, $alertaBurnout);
 
         return [
@@ -94,9 +95,6 @@ class EmocionController extends Controller
         ];
     }
 
-    /**
-     * ENSAMBLADOR NEURAL UNIVERSAL: Construcción modular accesible para cualquier estudiante.
-     */
     private function ensamblarRecomendacionNeural($emocion, $energia, $estres, $ctx, $burnout)
     {
         $prefijo = match(true) {
@@ -126,19 +124,14 @@ class EmocionController extends Controller
     }
 
     /**
-     * 📅 CALENDARIO DE ESTABILIDAD SINCRÓNICA (Heatmap)
-     * [Fase 3: Generación de Secuencias Temporales]
+     * 📅 CALENDARIO DE ESTABILIDAD (Heatmap)
      */
     public function verCalendario()
     {
-        // 1. Definimos el periodo de tiempo (Mes actual)
         $inicioMes = now()->startOfMonth();
         $finMes = now()->endOfMonth();
-
-        // 2. Creamos el rango de días para alimentar la cuadrícula de la vista
         $rangoDias = CarbonPeriod::create($inicioMes, $finMes);
 
-        // 3. Obtenemos el promedio de energía diario de la base de datos
         $datosHeatmap = auth()->user()->emociones()
             ->selectRaw('DATE(created_at) as fecha, AVG(energia) as promedio')
             ->whereBetween('created_at', [$inicioMes, $finMes])
@@ -149,12 +142,9 @@ class EmocionController extends Controller
         return view('perfil.calendario', compact('datosHeatmap', 'rangoDias'));
     }
 
-    /**
-     * Módulo de Historial y Reportes
-     */
     public function index()
     {
-        $historial = auth()->user()->emociones()->orderBy('created_at', 'desc')->get();
+        $historial = auth()->user()->emociones()->latest()->get();
         return view('historial', compact('historial'));
     }
 
@@ -166,9 +156,6 @@ class EmocionController extends Controller
         return $pdf->download("Reporte_Neural_S-Emotion_{$user->nombre}.pdf");
     }
 
-    /**
-     * Mantenimiento de Datos
-     */
     public function destroy($id)
     {
         auth()->user()->emociones()->findOrFail($id)->delete();

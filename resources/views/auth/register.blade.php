@@ -53,7 +53,7 @@
             <div>
                 <label class="text-[10px] text-gray-400 uppercase tracking-widest block mb-2 font-black">Tipo de Cuenta</label>
                 <select name="rol" id="rol-selector" onchange="toggleAdminKey()" class="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-3 text-white focus:border-neon-cyan outline-none transition-all cursor-pointer appearance-none">
-                    <option value="Usuario">👤 Usuario Estándar</option>
+                    <option value="jugador">👤 Usuario Estándar</option>
                     <option value="Administrador">🔑 Administrador del Sistema</option>
                 </select>
             </div>

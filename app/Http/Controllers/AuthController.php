@@ -10,57 +10,40 @@ use Spatie\Permission\Models\Role;
 
 class AuthController extends Controller
 {
-    /**
-     * Muestra la interfaz de acceso.
-     */
     public function showLogin() {
         return view('auth.login');
     }
 
-    /**
-     * Proceso de autenticación optimizado.
-     */
     public function login(Request $request) {
-        // 1. Validamos los datos que vienen del formulario
         $request->validate([
             'correo' => 'required|email',
             'contrasena' => 'required',
         ]);
 
-        // --- MODO DEBUG (Descomenta la línea de abajo si sigue fallando) ---
-        //dd($request->all());
-
-        // 2. Mapeamos manualmente el input 'contrasena' a la columna 'password'
         $credentials = [
             'correo'   => $request->correo,
             'password' => $request->contrasena,
         ];
 
-        // 3. Intentamos el login
-        // Usamos el helper Auth::attempt que ya probamos en Tinker
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
 
-            // Redirigir al dashboard con un saludo
             return redirect()->intended('dashboard')
                 ->with('status', '¡Bienvenido de nuevo, ' . Auth::user()->nombre . '!');
         }
 
-        // 4. Si falla, regresamos con el error y mantenemos el correo escrito
         return back()->withErrors([
             'correo' => 'Las credenciales no coinciden. Revisa tu correo o contraseña.',
         ])->withInput($request->only('correo'));
     }
 
-    /**
-     * Muestra el Registro.
-     */
     public function showRegister() {
         return view('auth.register');
     }
 
     /**
-     * Proceso de Registro con validación previa de seguridad.
+     * Proceso de Registro Sincronizado.
+     * [CORRECCIÓN]: Se cambió 'Usuario' por 'jugador' para coincidir con el RoleSeeder.
      */
     public function register(Request $request) {
         $request->validate([
@@ -68,11 +51,13 @@ class AuthController extends Controller
             'edad'       => 'required|integer|min:15|max:99',
             'correo'     => 'required|email|unique:usuarios,correo',
             'contrasena' => 'required|min:8|confirmed',
-            'rol'        => 'required|in:Usuario,Administrador',
+            'rol'        => 'required|in:jugador,Administrador', // Sincronizado con Seeder
         ]);
 
-        $rolFinal = 'Usuario';
+        // 1. Definimos el rol inicial
+        $rolFinal = 'jugador';
 
+        // 2. Verificación de Rango Alpha
         if ($request->rol === 'Administrador') {
             $masterKey = env('ADMIN_MASTER_KEY', 'emotion');
 
@@ -84,23 +69,25 @@ class AuthController extends Controller
             $rolFinal = 'Administrador';
         }
 
-        // Crear el usuario con la estructura correcta
+        // 3. Crear el usuario
+        // [REPARACIÓN]: Se añade 'rol' al create para que la columna en la DB no quede vacía.
         $user = User::create([
             'nombre'   => $request->nombre,
             'edad'     => $request->edad,
             'correo'   => $request->correo,
             'password' => Hash::make($request->contrasena),
+            'rol'      => $rolFinal, // <--- Sincronización visual en la tabla usuarios
         ]);
 
-        // Asignar rol de Spatie
+        // 4. Asignar rol de Spatie (Motor de Seguridad)
         $user->assignRole($rolFinal);
 
-        return redirect()->route('login')->with('status', "¡Registro exitoso! Ya puedes ingresar como $rolFinal.");
+        // 5. Autologin para mejorar la experiencia de usuario (UX)
+        Auth::login($user);
+
+        return redirect()->route('dashboard')->with('status', "¡Registro exitoso! Nivel de acceso: $rolFinal.");
     }
 
-    /**
-     * Logout limpio.
-     */
     public function logout(Request $request) {
         Auth::logout();
         $request->session()->invalidate();

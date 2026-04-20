@@ -15,7 +15,7 @@ Route::get('/', function () {
     return view('welcome');
 })->name('welcome');
 
-// Autenticación y Registro
+// Autenticación y Registro (Gestión de Acceso)
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/registrar', [AuthController::class, 'showRegister'])->name('register');
@@ -29,27 +29,34 @@ Route::post('/registrar', [AuthController::class, 'register']);
 
 Route::middleware(['auth'])->group(function () {
 
-    // --- DASHBOARD: Monitor Primario ---
+    /**
+     * --- DASHBOARD: Monitor Primario ---
+     */
     Route::get('/dashboard', function () {
-        $ultimoRegistro = auth()->user()->emociones()->orderBy('id', 'desc')->first();
+        $ultimoRegistro = auth()->user()->emociones()->latest()->first();
         return view('dashboard', compact('ultimoRegistro'));
     })->name('dashboard');
 
-    // --- GESTIÓN DE EMOCIONES: Captura de Datos ---
+    /**
+     * --- GESTIÓN DE EMOCIONES: Captura de Datos ---
+     */
     Route::post('/emociones', [EmocionController::class, 'store'])->name('emociones.store');
     Route::delete('/emociones/{id}', [EmocionController::class, 'destroy'])->name('emociones.destroy');
 
-    // --- HISTORIAL Y ANÁLISIS: Reportes y Calendario ---
+    /**
+     * --- HISTORIAL Y ANÁLISIS: Reportes y Calendario ---
+     */
     Route::get('/historial', [EmocionController::class, 'index'])->name('historial.index');
     Route::get('/historial/reporte', [EmocionController::class, 'generarPDF'])->name('emociones.reporte');
     Route::get('/perfil/calendario', [EmocionController::class, 'verCalendario'])->name('perfil.calendario');
 
-    // Herramientas de Limpieza de Datos
+    // Herramientas de Purga de Datos
     Route::delete('/historial/reiniciar', [EmocionController::class, 'reiniciarHistorial'])->name('emociones.reiniciar');
     Route::post('/historial/eliminar-seleccionados', [EmocionController::class, 'eliminarSeleccionados'])->name('emociones.eliminarSeleccionados');
 
-    // --- CONFIGURACIÓN DE IDENTIDAD: Personalización de Terminal ---
-    // [INGENIERÍA]: Rutas para el nuevo módulo de perfil y almacenamiento de feedback
+    /**
+     * --- CONFIGURACIÓN DE IDENTIDAD: Terminal de Usuario ---
+     */
     Route::get('/configuracion', [UsuarioController::class, 'configuracion'])->name('perfil.config');
     Route::patch('/perfil/update', [UsuarioController::class, 'updatePerfil'])->name('perfil.update');
     Route::post('/perfil/feedback', [UsuarioController::class, 'storeFeedback'])->name('perfil.feedback');
@@ -60,17 +67,18 @@ Route::middleware(['auth'])->group(function () {
     |----------------------------------------------------------------------
     */
     Route::middleware(['role:Administrador'])->group(function () {
-        // Gestión de Operadores (CRUD)
-        Route::resource('usuarios', UsuarioController::class);
 
-        // Protocolo de Cambio de Rango
+        // 1. Gestión de Operadores (CRUD de Usuarios)
+        Route::resource('usuarios', UsuarioController::class);
         Route::patch('/usuarios/{user}/rol', [UsuarioController::class, 'updateRole'])->name('usuarios.updateRole');
 
-        // [NUEVO] MONITOR DE FEEDBACK: Visualización de quejas y sugerencias
-        // Aquí es donde el Administrador lee lo que los usuarios envían desde la terminal
+        // 2. MONITOR DE FEEDBACK: Gestión de Reportes Alpha
+        // [NUEVO]: Rutas para gestión interactiva de feedback
         Route::get('/admin/feedback', [UsuarioController::class, 'verFeedback'])->name('admin.feedback');
+        Route::delete('/admin/feedback/{feedback}', [UsuarioController::class, 'destroyFeedback'])->name('feedback.destroy');
+        Route::patch('/admin/feedback/{feedback}/status', [UsuarioController::class, 'updateFeedbackStatus'])->name('feedback.updateStatus');
 
-        // Fallback de seguridad para roles
+        // Seguridad: Evitar acceso GET a rutas de procesamiento
         Route::get('/usuarios/{user}/rol', function () {
             return redirect()->route('usuarios.index');
         });
