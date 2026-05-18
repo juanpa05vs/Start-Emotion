@@ -76,6 +76,23 @@
                     </div>
                 </form>
             </div>
+
+            {{-- [NUEVO] SELECCIÓN DE LUMINOSIDAD (MODO CLARO / OSCURO) --}}
+            <div class="bg-black/40 border border-white/10 backdrop-blur-xl p-6 rounded-2xl">
+                <h3 class="text-white text-[10px] font-black uppercase mb-4 tracking-widest flex items-center gap-2">
+                    <i class="fa-solid fa-circle-half-stroke text-accent"></i> Luminosidad del Núcleo
+                </h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <button type="button" onclick="setThemeMode('dark')" id="btn-theme-dark"
+                            class="h-10 rounded-lg border text-[9px] font-bold uppercase transition-all">
+                        <i class="fa-solid fa-moon mr-1"></i> Modo Oscuro
+                    </button>
+                    <button type="button" onclick="setThemeMode('light')" id="btn-theme-light"
+                            class="h-10 rounded-lg border text-[9px] font-bold uppercase transition-all">
+                        <i class="fa-solid fa-sun mr-1"></i> Modo Claro
+                    </button>
+                </div>
+            </div>
         </div>
 
         {{-- COLUMNA DERECHA: CREDENCIALES Y FEEDBACK --}}
@@ -115,7 +132,6 @@
 
                 <form action="{{ route('perfil.feedback') }}" method="POST">
                     @csrf
-                    {{-- [REPARACIÓN]: Cambiamos el name="comentario" por name="mensaje" para que el controlador lo reciba --}}
                     <textarea name="mensaje" required placeholder="Escriba aquí su reporte (mínimo 3 caracteres)..." rows="3"
                               class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-accent focus:ring-0 transition-all outline-none placeholder:text-gray-700">{{ old('mensaje') }}</textarea>
 
@@ -128,3 +144,38 @@
     </div>
 </div>
 @endsection
+
+{{-- [NUEVO] SCRIPT DE INTERACCIÓN LOGICAL PARA LUMINOSIDAD --}}
+@push('scripts')
+<script>
+    function setThemeMode(mode) {
+        if (mode === 'light') {
+            document.documentElement.classList.add('light-mode');
+            localStorage.setItem('theme', 'light');
+        } else {
+            document.documentElement.classList.remove('light-mode');
+            localStorage.setItem('theme', 'dark');
+        }
+        updateButtonStyles();
+    }
+
+    function updateButtonStyles() {
+        const isLight = document.documentElement.classList.contains('light-mode');
+        const btnLight = document.getElementById('btn-theme-light');
+        const btnDark = document.getElementById('btn-theme-dark');
+
+        if (!btnLight || !btnDark) return;
+
+        if (isLight) {
+            btnLight.className = "h-10 rounded-lg border border-accent bg-accent/20 text-white text-[9px] font-bold uppercase transition-all shadow-[0_0_10px_var(--neon-accent)]";
+            btnDark.className = "h-10 rounded-lg border border-white/10 text-gray-500 hover:border-white/30 text-[9px] font-bold uppercase transition-all";
+        } else {
+            btnDark.className = "h-10 rounded-lg border border-accent bg-accent/20 text-white text-[9px] font-bold uppercase transition-all shadow-[0_0_10px_var(--neon-accent)]";
+            btnLight.className = "h-10 rounded-lg border border-white/10 text-gray-500 hover:border-white/30 text-[9px] font-bold uppercase transition-all";
+        }
+    }
+
+    // Inicializar estados visuales de botones al cargar el DOM
+    document.addEventListener('DOMContentLoaded', updateButtonStyles);
+</script>
+@endpush

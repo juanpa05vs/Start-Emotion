@@ -1,7 +1,7 @@
 /* 1. Importación maestra de Tailwind v4 */
 @import "tailwindcss";
 
-/* 2. Definición del Tema Creativo (Sustituye al config.js en v4) */
+/* 2. Definición del Tema Creativo (Ecosistema S-Emotion) */
 @theme {
   --color-start-dark: #020617;
   --color-neon-cyan: #22D3EE;
@@ -23,15 +23,109 @@
 }
 
 /* 3. Estilos Base Globales */
-@layer base {
-  body {
-    @apply bg-start-dark text-white font-sans antialiased;
-    margin: 0;
-    padding: 0;
+body {
+  @apply bg-start-dark text-white antialiased;
+  margin: 0;
+  padding: 0;
+}
+
+/* 4. Protocolo de Modo Claro (Inversión Global de Interfaz) */
+html.light-mode {
+
+  /* Transmutación de tarjetas oscuras a paneles claros aero-elegantes */
+  .bg-black\/40, .bg-white\/5 {
+    background-color: rgba(255, 255, 255, 0.85) !important;
+    border-color: rgba(15, 23, 42, 0.08) !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+  }
+
+  /* Re-ajuste de inputs de formularios convencionales */
+  .bg-black\/50 {
+    background-color: #ffffff !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+    color: #0f172a !important;
+  }
+
+  /* Sincronización de bordes opacos */
+  .border-white\/10, .border-white\/5 {
+    border-color: rgba(15, 23, 42, 0.1) !important;
+  }
+
+  /* Inversión de jerarquías de texto de Tailwind */
+  .text-white, .text-gray-300 {
+    color: #0f172a !important;
+  }
+
+  .text-gray-400 {
+    color: #334155 !important;
+  }
+
+  .text-gray-500, .text-gray-600 {
+    color: #64748b !important;
+  }
+
+  /* ==========================================================================
+     📌 CORRECCIONES ESPECÍFICAS DE CONTRASTE (MODO CLARO)
+     ========================================================================== */
+
+  /* 1. Corrección del Botón de Estado Percibido ("Entusiasta") */
+  /* Cambia la píldora gris oscuro por una clara con borde sutil */
+  .bg-zinc-800, .bg-gray-800, button.bg-black\/40, [class*="bg-zinc-"], [class*="bg-gray-"] {
+    if (&:not(input)) {
+      background-color: rgba(15, 23, 42, 0.05) !important;
+      color: #0f172a !important;
+      border: 1px solid rgba(15, 23, 42, 0.1) !important;
+    }
+  }
+
+  /* 2. Corrección de la Barra de Energía Vital (Slider Track) */
+  /* Hace visible la línea horizontal del rango donde se mueve el círculo cyan */
+  input[type="range"] {
+    background-color: #cbd5e1 !important; /* Gris acero visible */
+    height: 6px !important;
+    border-radius: 9999px;
+  }
+
+  /* Por si usas un contenedor personalizado para la pista del slider */
+  .h-2.bg-gray-700, .bg-neutral-800 {
+    background-color: #cbd5e1 !important;
+  }
+
+  /* 3. Corrección del Módulo Calendario */
+  /* El fondo gigante gris oscuro pasa a ser un contenedor blanco limpio o gris ultra claro */
+  aside + main .bg-zinc-900,
+  aside + main .bg-gray-800,
+  aside + main .bg-neutral-900,
+  .p-8.max-w-7xl .bg-black\/40,
+  main .rounded-3xl.bg-black\/20 {
+    background-color: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  }
+
+  /* Los cuadros de los días individuales (Gris claro con texto negro puro) */
+  aside + main .grid > div,
+  main .grid > div {
+    background-color: #f8fafc !important; /* Fondo de día elegante */
+    border: 1px solid rgba(15, 23, 42, 0.06) !important;
+    color: #0f172a !important; /* Números de los días en negro */
+  }
+
+  /* Forzar visibilidad de los números de los días dentro de los cuadros */
+  aside + main .grid > div span,
+  aside + main .grid > div p,
+  main .grid div {
+    color: #0f172a !important;
+    font-weight: 600 !important;
+  }
+
+  /* Etiquetas de los días de la semana (LUN, MAR, MIÉ...) */
+  .text-cyan-400, .text-accent, main .grid > span {
+    color: #0284c7 !important; /* Cyan oscuro legible para títulos sobre blanco */
+    font-weight: 700 !important;
   }
 }
 
-/* 4. Utilidades personalizadas (opcional) */
-.text-outline {
+/* 5. Utilidades personalizadas (Estándar nativo de Tailwind v4) */
+@utility text-outline {
   -webkit-text-stroke: 1px rgba(34, 211, 238, 0.5);
 }

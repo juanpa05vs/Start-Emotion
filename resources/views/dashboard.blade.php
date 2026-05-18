@@ -88,8 +88,8 @@
                 <i class="fa-solid fa-chart-line text-neon-cyan/20 text-4xl"></i>
             </div>
             <div class="flex justify-between items-center mb-10">
-                <h2 class="text-gray-400 text-[10px] uppercase tracking-[0.4em] font-black">Tendencia de Energía</h2>
-                <span class="text-[8px] text-neon-cyan/50 uppercase tracking-widest italic font-bold">Monitor Longitudinal</span>
+                <h2 class="text-gray-400 text-[15px] uppercase tracking-[0.4em] font-black">Tendencia de Energía</h2>
+                <span class="text-[10px] text-neon-cyan/50 uppercase tracking-widest italic font-bold">Monitor Longitudinal</span>
             </div>
             <div class="h-72">
                 <canvas id="emocionChart"></canvas>
@@ -109,8 +109,8 @@
                     </span>
                 </div>
             </div>
-            <h3 class="text-neon-purple text-[10px] uppercase tracking-[0.5em] font-black mb-4">Análisis Neural</h3>
-            <p class="text-[11px] text-gray-300 leading-relaxed italic px-6 font-medium">
+            <h3 class="text-neon-purple text-[13px] uppercase tracking-[0.5em] font-black mb-4">Análisis Neural</h3>
+            <p class="text-[13px] text-gray-300 leading-relaxed italic px-6 font-medium">
                 "{{ $ultimoRegistro ? $ultimoRegistro->recomendacion : 'Sincroniza el sistema para iniciar el análisis conductual.' }}"
             </p>
         </section>
@@ -119,12 +119,12 @@
     {{-- Captura de Sesión --}}
     <section class="bg-black/40 border border-white/10 p-10 rounded-[2.5rem] backdrop-blur-xl shadow-2xl relative overflow-hidden">
         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-neon-cyan to-transparent opacity-30"></div>
-        <h2 class="text-neon-cyan text-[10px] tracking-[0.5em] font-black uppercase mb-10 text-center">Protocolo de Entrada de Datos</h2>
+        <h2 class="text-neon-cyan text-[20px] tracking-[0.5em] font-black uppercase mb-10 text-center">Registro de Emociones</h2>
 
         <form action="{{ route('emociones.store') }}" method="POST" class="grid grid-cols-1 md:grid-cols-4 items-end gap-10">
             @csrf
             <div class="md:col-span-1">
-                <label class="text-[9px] text-gray-500 block mb-4 uppercase tracking-[0.2em] font-black">Estado Percibido</label>
+                <label class="text-[15px] text-gray-500 block mb-4 uppercase tracking-[0.2em] font-black">Estado Percibido</label>
                 <select name="emocion" class="w-full bg-black/80 border border-white/10 rounded-2xl px-5 py-4 text-white focus:border-neon-cyan outline-none transition-all appearance-none cursor-pointer font-bold text-xs">
                     <option value="Entusiasta">🚀 Entusiasta</option>
                     <option value="Productivo">💻 Productivo</option>
@@ -136,7 +136,7 @@
 
             <div class="md:col-span-2">
                 <div class="flex justify-between items-center mb-4">
-                    <label class="text-[9px] text-gray-500 uppercase tracking-[0.2em] font-black">Nivel de Energía Vital</label>
+                    <label class="text-[15px] text-gray-500 uppercase tracking-[0.2em] font-black">Nivel de Energía Vital</label>
                     <span id="energy-val-display" class="text-xl font-black text-neon-cyan italic drop-shadow-[0_0_10px_rgba(34,211,238,0.6)] font-orbitron">
                         50%
                     </span>
@@ -152,7 +152,7 @@
             </div>
 
             <div class="md:col-span-1">
-                <button type="submit" class="w-full bg-neon-cyan/10 border border-neon-cyan text-neon-cyan py-5 rounded-2xl font-black uppercase text-[10px] tracking-[0.3em] hover:bg-neon-cyan hover:text-black transition-all shadow-[0_0_25px_rgba(34,211,238,0.1)] active:scale-95">
+                <button type="submit" class="w-full bg-neon-cyan/10 border border-neon-cyan text-neon-cyan py-5 rounded-2xl font-black uppercase text-[15px] tracking-[0.3em] hover:bg-neon-cyan hover:text-black transition-all shadow-[0_0_25px_rgba(34,211,238,0.1)] active:scale-95">
                     Sincronizar
                 </button>
             </div>

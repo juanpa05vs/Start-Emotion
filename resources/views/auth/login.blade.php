@@ -56,12 +56,20 @@
                     @enderror
                 </div>
 
-                {{-- Campo: Contraseña --}}
+                {{-- Campo: Contraseña (MODIFICADO CON CONTENEDOR RELATIVO Y BOTÓN) --}}
                 <div>
                     <label class="text-[10px] text-gray-400 font-black uppercase tracking-widest block mb-2">Contraseña</label>
-                    <input type="password" name="contrasena"
-                        class="w-full bg-gray-50 border @error('contrasena') border-red-500 @else border-gray-200 @enderror rounded-xl px-5 py-3 text-gray-900 focus:ring-2 focus:ring-neon-purple outline-none transition-all placeholder:text-gray-300"
-                        placeholder="••••••••" required>
+                    <div class="relative">
+                        <input type="password" name="contrasena" id="contrasena"
+                            class="w-full bg-gray-50 border @error('contrasena') border-red-500 @else border-gray-200 @enderror rounded-xl pl-5 pr-12 py-3 text-gray-900 focus:ring-2 focus:ring-neon-purple outline-none transition-all placeholder:text-gray-300"
+                            placeholder="••••••••" required>
+
+                        {{-- Botón interactivo posicionado dinámicamente --}}
+                        <button type="button" id="togglePassword"
+                            class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-neon-purple transition-colors focus:outline-none text-sm">
+                            👁️
+                        </button>
+                    </div>
                 </div>
 
                 {{-- Campo: Tipo de Acceso (Sincronizado con ABP) --}}
@@ -92,3 +100,22 @@
     </div>
 </div>
 @endsection
+
+{{-- Script de control para alternar el tipo de input --}}
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const passwordInput = document.getElementById('contrasena');
+        const togglePasswordButton = document.getElementById('togglePassword');
+
+        togglePasswordButton.addEventListener('click', function () {
+            // Evaluamos el tipo actual y lo cambiamos
+            const isPassword = passwordInput.getAttribute('type') === 'password';
+            passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+
+            // Alternamos el emoji visual
+            this.textContent = isPassword ? '🙈' : '👁️';
+        });
+    });
+</script>
+@endpush

@@ -12,6 +12,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    {{-- [MODO LUMINOSO]: Interceptor temprano para evitar el parpadeo oscuro al recargar --}}
+    <script>
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.add('light-mode');
+        } else {
+            document.documentElement.classList.remove('light-mode');
+        }
+    </script>
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @php
@@ -55,37 +64,67 @@
             --neon-cyan: #22d3ee;
             --neon-purple: #a855f7;
             --neon-rose: #f43f5e;
+
+            /* [NUEVO] Abstracción de colores de entorno para soporte de modos */
+            --bg-primary: #030712;
+            --bg-sidebar: rgba(0, 0, 0, 0.6);
+            --border-system: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff;
+            --text-muted: #94a3b8;
+            --scanline-opacity: 0.02;
+        }
+
+        /* [NUEVO] Mutación del ecosistema al Modo Claro */
+        html.light-mode {
+            --bg-primary: #f1f5f9;
+            --bg-sidebar: rgba(255, 255, 255, 0.8);
+            --border-system: rgba(15, 23, 42, 0.08);
+            --text-primary: #0f172a;
+            --text-muted: #475569;
+            --scanline-opacity: 0.005;
         }
 
         body {
             font-family: 'Rajdhani', sans-serif;
             cursor: crosshair;
-            background-color: #030712;
-            color: white;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.4s ease, color 0.4s ease;
         }
 
         .font-orbitron { font-family: 'Orbitron', sans-serif; }
 
-        /* [ESTÉTICA] Efecto Scanline dinámico */
+        /* [ESTÉTICA] Efecto Scanline adaptativo */
         .scanline {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, transparent 50%, rgba({{ $rgbValue }}, 0.02) 50%);
+            background: linear-gradient(to bottom, transparent 50%, rgba(var(--neon-accent-rgb), var(--scanline-opacity)) 50%);
             background-size: 100% 4px;
             z-index: 9999;
             pointer-events: none;
             opacity: 0.3;
         }
 
+        /* Estilos reactivos de barra lateral */
+        aside.sidebar-alpha {
+            background-color: var(--bg-sidebar) !important;
+            border-color: var(--border-system) !important;
+            transition: background-color 0.4s ease, border-color 0.4s ease;
+        }
+
+        /* Forzar herencia de color de texto en elementos clave */
+        .adaptive-title { color: var(--text-primary) !important; }
+        .adaptive-text { color: var(--text-muted) !important; }
+
         /* Clases de utilidad dinámicas basadas en el tema */
         .text-accent { color: var(--neon-accent); }
         .border-accent { border-color: var(--neon-accent); }
-        .bg-accent-soft { background-color: rgba({{ $rgbValue }}, 0.1); }
-        .shadow-accent { box-shadow: 0 0 15px rgba({{ $rgbValue }}, 0.3); }
+        .bg-accent-soft { background-color: rgba(var(--neon-accent-rgb), 0.1); }
+        .shadow-accent { box-shadow: 0 0 15px rgba(var(--neon-accent-rgb), 0.3); }
 
         /* Scrollbar Personalizada */
         ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: #030712; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
         ::-webkit-scrollbar-thumb { background: var(--neon-accent); border-radius: 10px; }
     </style>
     @stack('styles')
@@ -97,13 +136,13 @@
     <div class="flex relative z-10">
         {{-- SIDEBAR --}}
         @auth
-        <aside class="w-72 border-r border-white/10 min-h-screen bg-black/60 backdrop-blur-2xl sticky top-0 h-screen flex flex-col shadow-[20px_0_50px_-20px_rgba(0,0,0,0.5)]">
+        <aside class="sidebar-alpha w-72 border-r min-h-screen backdrop-blur-2xl sticky top-0 h-screen flex flex-col shadow-[20px_0_50px_-20px_rgba(0,0,0,0.5)]">
 
             {{-- LOGO SECTOR --}}
             <div class="p-8 mb-4">
                 <a href="{{ route('dashboard') }}" class="group block relative">
                     <div class="absolute -inset-2 bg-accent-soft blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                    <h2 class="font-orbitron text-2xl font-black tracking-tighter text-white relative">
+                    <h2 class="font-orbitron text-2xl font-black tracking-tighter adaptive-title relative">
                         S-<span class="text-accent drop-shadow-[0_0_8px_var(--neon-accent)]">EMOTION</span>
                     </h2>
                     <div class="flex items-center gap-2 mt-1">
@@ -115,7 +154,7 @@
 
             {{-- NAVEGACIÓN --}}
             <nav class="flex-1 px-4 space-y-2 overflow-y-auto">
-                <p class="text-[9px] text-gray-600 uppercase tracking-[0.3em] font-black mb-4 pl-4">Menú de Mando</p>
+                <p class="text-[9px] text-gray-500 uppercase tracking-[0.3em] font-black mb-4 pl-4">Menú de Mando</p>
 
                 <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" icon="fa-house-chimney" step="01" label="Inicio" />
                 <x-nav-link :href="route('historial.index')" :active="request()->routeIs('historial.*')" icon="fa-microchip" step="02" label="Historial" />
@@ -125,18 +164,16 @@
                 {{-- SECCIÓN ADMINISTRACIÓN --}}
                 @if($user->esAdmin())
                     <div class="pt-8 mt-6 border-t border-white/5">
-                        <p class="text-[9px] text-gray-600 uppercase tracking-[0.3em] font-black mb-4 pl-4">Alpha Sector</p>
-                        
+                        <p class="text-[9px] text-gray-500 uppercase tracking-[0.3em] font-black mb-4 pl-4">Alpha Sector</p>
+
                         <x-nav-link :href="route('usuarios.index')" :active="request()->routeIs('usuarios.*')" icon="fa-users-gear" step="AA" label="Usuarios" />
-                        
-                        {{-- [NUEVO] Monitor de Feedback para el Admin --}}
                         <x-nav-link :href="route('admin.feedback')" :active="request()->routeIs('admin.feedback')" icon="fa-comment-medical" step="FB" label="Monitor Feedback" sub="Mejora Continua" />
                     </div>
                 @endif
             </nav>
 
             {{-- USER PROFILE CARD --}}
-            <div class="p-6 mt-auto bg-gradient-to-t from-black to-transparent">
+            <div class="p-6 mt-auto bg-gradient-to-t from-black/20 to-transparent">
                 <div class="bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-md">
                     <div class="flex items-center gap-3">
                         <div class="relative h-10 w-10 shrink-0">
@@ -150,7 +187,7 @@
                             @endif
                         </div>
                         <div class="flex flex-col min-w-0">
-                            <p class="text-[10px] font-black text-white truncate uppercase">{{ $user->nombre }}</p>
+                            <p class="text-[10px] font-black adaptive-title truncate uppercase">{{ $user->nombre }}</p>
                             <p class="text-[7px] text-accent font-bold tracking-[0.2em] uppercase">Status: Online</p>
                         </div>
                     </div>
@@ -171,7 +208,7 @@
             <div class="max-w-7xl mx-auto">
                 {{-- Alertas del Sistema --}}
                 @if(session('success'))
-                    <div class="mb-6 p-4 bg-accent-soft border border-accent/30 rounded-xl text-white text-[10px] font-bold uppercase tracking-widest flex items-center shadow-accent animate-pulse">
+                    <div class="mb-6 p-4 bg-accent-soft border border-accent/30 rounded-xl adaptive-title text-[10px] font-bold uppercase tracking-widest flex items-center shadow-accent animate-pulse">
                         <i class="fa-solid fa-check-double text-accent mr-3 text-sm"></i> {{ session('success') }}
                     </div>
                 @endif
