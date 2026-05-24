@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmocionController;
 use App\Http\Controllers\UsuarioController;
+use App\Http\Controllers\DiagnosticoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -55,6 +56,15 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/historial/eliminar-seleccionados', [EmocionController::class, 'eliminarSeleccionados'])->name('emociones.eliminarSeleccionados');
 
     /**
+     * --- SECTOR RECREATIVO: Minijuegos de Recalibración (Gamificación) ---
+     */
+    // Menú Principal / Catálogo de Minijuegos
+    Route::get('/terminal/minijuegos', [DiagnosticoController::class, 'index'])->name('minijuegos.index');
+
+    // Juego 1: Adivina Quién Emocional (Código Anómalo)
+    Route::get('/terminal/minijuegos/diagnostico', [DiagnosticoController::class, 'diagnostico'])->name('minijuegos.diagnostico');
+
+    /**
      * --- CONFIGURACIÓN DE IDENTIDAD: Terminal de Usuario ---
      */
     Route::get('/configuracion', [UsuarioController::class, 'configuracion'])->name('perfil.config');
@@ -65,7 +75,7 @@ Route::middleware(['auth'])->group(function () {
     |----------------------------------------------------------------------
     | SECTOR ADMINISTRATIVO: Control Nivel Alpha (Restringido)
     |----------------------------------------------------------------------
-    */
+    |*/
     Route::middleware(['role:Administrador'])->group(function () {
 
         // 1. Gestión de Operadores (CRUD de Usuarios)
@@ -73,7 +83,6 @@ Route::middleware(['auth'])->group(function () {
         Route::patch('/usuarios/{user}/rol', [UsuarioController::class, 'updateRole'])->name('usuarios.updateRole');
 
         // 2. MONITOR DE FEEDBACK: Gestión de Reportes Alpha
-        // [NUEVO]: Rutas para gestión interactiva de feedback
         Route::get('/admin/feedback', [UsuarioController::class, 'verFeedback'])->name('admin.feedback');
         Route::delete('/admin/feedback/{feedback}', [UsuarioController::class, 'destroyFeedback'])->name('feedback.destroy');
         Route::patch('/admin/feedback/{feedback}/status', [UsuarioController::class, 'updateFeedbackStatus'])->name('feedback.updateStatus');

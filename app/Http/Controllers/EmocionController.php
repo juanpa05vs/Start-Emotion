@@ -10,14 +10,10 @@ use Carbon\CarbonPeriod;
 
 class EmocionController extends Controller
 {
-    /**
-     * CAPA DE LÓGICA: Captura de datos con Motor de Análisis Neural Humano.
-     * [REPARACIÓN]: Se actualizó 'usuario_id' a 'user_id' para sincronizar con la BD.
-     */
     public function store(Request $request)
     {
         $request->validate([
-            'emocion'       => 'required|string',
+            'emocion'       => 'required|string|in:felicidad,entusiasta,productivo,relajado,tristeza,melancolia,agotado,ansioso,ira',
             'energia'       => 'required|integer|min:1|max:100',
             'observaciones' => 'nullable|string|max:1000',
             'contexto'      => 'nullable|string',
@@ -30,9 +26,8 @@ class EmocionController extends Controller
             $request->contexto
         );
 
-        // --- EL PUNTO CRÍTICO DE REPARACIÓN ---
         RegistroEmocion::create([
-            'user_id'               => auth()->id(), // ✅ Corregido: user_id
+            'user_id'               => auth()->id(),
             'emocion'               => $request->emocion,
             'energia'               => $request->energia,
             'nivel_estres_estimado' => $analisis['estres'],
@@ -42,30 +37,21 @@ class EmocionController extends Controller
             'alerta_burnout'        => $analisis['burnout'],
         ]);
 
-        return redirect()->route('dashboard')->with('status', 'BIO-SYNC: Análisis Neural Completado');
+        return redirect()->route('dashboard')->with('status', 'BIO-SYNC: Análisis de Red Completado');
     }
 
-    /**
-     * MOTOR DE ANÁLISIS NEURAL
-     */
     private function motorAnalisisNeural($emocion, $energia, $obs, $ctx)
     {
-        // NIVEL 1: PREDICCIÓN DE FATIGA
-        // Usamos la relación definida en User.php que ya está corregida
         $ultimosRegistros = auth()->user()->emociones()->latest()->take(3)->pluck('energia');
         $promedioEnergia = $ultimosRegistros->count() > 0 ? $ultimosRegistros->avg() : $energia;
-        $alertaBurnout = ($promedioEnergia < 40 && $energia < 40);
 
-        // NIVEL 2: NLP UNIVERSAL (Diccionario TESVB)
+        // Alerta de colapso si los estados de baja energía se cronifican por debajo del 35%
+        $alertaBurnout = (in_array($emocion, ['tristeza', 'melancolia', 'agotado']) && $promedioEnergia < 35 && $energia < 35);
+
         $estresPorTexto = 0;
         $lexicoEstudiantil = [
-            'examen'       => 15,
-            'entregar'     => 10,
-            'calificación' => 10,
-            'reprobar'     => 20,
-            'presión'      => 15,
-            'difícil'      => 10,
-            'tesvb'        => 5
+            'examen' => 15, 'entregar' => 10, 'calificación' => 10,
+            'reprobar' => 20, 'presión' => 15, 'difícil' => 10, 'tesvb' => 5
         ];
 
         if ($obs) {
@@ -75,12 +61,8 @@ class EmocionController extends Controller
             }
         }
 
-        // NIVEL 3: CORRELACIÓN CONTEXTUAL
         $ajusteContexto = match($ctx) {
-            'Exámenes' => 15,
-            'Proyecto' => 10,
-            'Clases'   => 5,
-            default    => 0,
+            'Exámenes' => 15, 'Proyecto' => 10, 'Clases' => 5, default => 0,
         };
 
         $estresBase = $this->calcularEstresSimulado($emocion, $energia);
@@ -98,93 +80,69 @@ class EmocionController extends Controller
     private function ensamblarRecomendacionNeural($emocion, $energia, $estres, $ctx, $burnout)
     {
         $prefijo = match(true) {
-            $burnout     => "⚠️ AVISO DE FATIGA: Tu cuerpo está pidiendo una pausa necesaria. ",
-            $estres > 80 => "🔥 NIVEL DE TENSIÓN ALTO: Estás bajo mucha presión en este momento. ",
-            $energia < 25 => "🪫 BATERÍA BAJA: Tus niveles de energía están al mínimo. ",
-            default      => "✨ ESTADO ESTABLE: Tu rendimiento actual es equilibrado. "
+            $burnout     => "⚠️ ALERTA BURNOUT: Tu procesador mental está al límite. Pausa obligatoria. ",
+            $estres > 80 => "🔥 SOBRECARGA DE TENSIÓN: Atenúa las tareas críticas de inmediato. ",
+            $energia < 30 && in_array($emocion, ['tristeza', 'melancolia', 'agotado']) => "🪫 ENERGÍA EN RESERVA: Reduce el consumo de recursos cognitivos. ",
+            default      => "✨ SEÑAL ESTABLE: Núcleo operando bajo parámetros equilibrados. "
         };
 
         $nucleo = match($emocion) {
-            'Ansioso'    => "Intenta dividir tus pendientes en pasos muy pequeños para no abrumarte. ",
-            'Agotado'    => "Es momento de desconectarte de todo. Un descanso de 15 minutos te ayudará a reiniciar. ",
-            'Entusiasta' => "¡Estás en un gran momento! Aprovecha para avanzar en tus tareas más pesadas. ",
-            'Productivo' => "Vas por muy buen camino. Sigue manteniendo ese ritmo constante. ",
-            'Relajado'   => "Disfruta este momento de calma para organizar lo que sigue en tu día. ",
-            default      => "Sigue monitoreando cómo te sientes para cuidar tu bienestar. "
+            'felicidad'  => "Disfruta de este estado de balance; es un excelente momento para documentar avances.",
+            'entusiasta' => "Alta motivación detectada. Aprovecha este pico para liquidar los pendientes más complejos.",
+            'productivo' => "Estás en estado de flujo (Flow). Mantén el enfoque y evita las distracciones externas.",
+            'relajado'   => "Fase de enfriamiento óptima. Ideal para planificar la arquitectura de tus próximos días.",
+            'tristeza'   => "Señal de baja frecuencia. No te presiones por producir; el sistema requiere procesar datos afectivos.",
+            'melancolia' => "Reflexión profunda. Un espacio de desconexión analógica te vendrá excelente.",
+            'agotado'    => "Fatiga física acumulada. Cierra el IDE de programación y recupera horas de sueño.",
+            'ansioso'    => "Ciclo síncrono acelerado. Fragmenta tus entregas en micro-tareas para reducir la incertidumbre.",
+            'ira'        => "Pico de sobrevoltaje. Aléjate de la consola, respira en bloques de 4 segundos y disipa la tensión.",
+            default      => "Sigue monitoreando los logs de tu comportamiento diario."
         };
 
         $cierre = match($ctx) {
-            'Exámenes' => "Respira profundo; recuerda que un examen no define todo tu potencial.",
-            'Proyecto' => "Paso a paso se llega a la meta. ¡No olvides hidratarte mientras trabajas!",
-            'Clases'   => "Trata de mantener la atención y toma descansos breves entre materias.",
-            default    => "¡Mucho éxito en tus actividades de hoy!"
+            'Exámenes' => " Un examen mide memoria temporal, no tus capacidades como ingeniero.",
+            'Proyecto' => " Haz commits pequeños. ¡Y no olvides hidratar el sistema operativo de tu cuerpo!",
+            'Clases'   => " Toma apuntes estructurados y estira los músculos entre módulos de clase.",
+            default    => " ¡Optimiza tus bloques de tiempo hoy!"
         };
 
         return $prefijo . $nucleo . $cierre;
     }
 
-    /**
-     * 📅 CALENDARIO DE ESTABILIDAD (Heatmap)
-     */
-    public function verCalendario()
-    {
-        $inicioMes = now()->startOfMonth();
-        $finMes = now()->endOfMonth();
-        $rangoDias = CarbonPeriod::create($inicioMes, $finMes);
-
-        $datosHeatmap = auth()->user()->emociones()
-            ->selectRaw('DATE(created_at) as fecha, AVG(energia) as promedio')
-            ->whereBetween('created_at', [$inicioMes, $finMes])
-            ->groupBy('fecha')
-            ->get()
-            ->pluck('promedio', 'fecha');
-
-        return view('perfil.calendario', compact('datosHeatmap', 'rangoDias'));
-    }
-
-    public function index()
-    {
-        $historial = auth()->user()->emociones()->latest()->get();
-        return view('historial', compact('historial'));
-    }
-
-    public function generarPDF()
-    {
-        $historial = auth()->user()->emociones()->latest()->get();
-        $user = auth()->user();
-        $pdf = Pdf::loadView('reportes.emociones', compact('historial', 'user'));
-        return $pdf->download("Reporte_Neural_S-Emotion_{$user->nombre}.pdf");
-    }
-
-    public function destroy($id)
-    {
-        auth()->user()->emociones()->findOrFail($id)->delete();
-        return back()->with('status', 'Registro eliminado del sector de memoria.');
-    }
-
-    public function reiniciarHistorial()
-    {
-        auth()->user()->emociones()->delete();
-        return back()->with('status', 'MEMORIA PURGADA: El historial ha sido reiniciado.');
-    }
-
-    public function eliminarSeleccionados(Request $request)
-    {
-        $request->validate(['ids' => 'required|array']);
-        auth()->user()->emociones()->whereIn('id', $request->ids)->delete();
-        return back()->with('status', 'SISTEMA ACTUALIZADO: Registros purgados.');
-    }
-
     private function calcularEstresSimulado($emocion, $energia)
     {
+        // La Ira y la Ansiedad disparan el estrés independientemente de la energía;
+        // En la tristeza o el agotamiento, a MENOR energía, MAYOR es el estrés por desgana.
         $base = match($emocion) {
-            'Ansioso'    => 75,
-            'Agotado'    => 55,
-            'Entusiasta' => 15,
-            'Productivo' => 25,
-            default      => 35,
+            'ira'        => 85,
+            'ansioso'    => 75,
+            'agotado'    => 60,
+            'tristeza'   => 50,
+            'melancolia' => 45,
+            'productivo' => 20,
+            'relajado'   => 10,
+            'felicidad', 'entusiasta' => 5,
+            default      => 30,
         };
-        $ajusteEnergia = (100 - $energia) / 4;
-        return round($base + $ajusteEnergia);
+
+        if (in_array($emocion, ['ira', 'ansioso', 'felicidad', 'entusiasta'])) {
+            $ajuste = $energia / 5; // A mayor intensidad en estas, se acentúa su naturaleza
+            return round(min(100, $base + $ajuste));
+        } else {
+            $ajuste = (100 - $energia) / 3; // En las pasivas, menos energía implica más estrés interno
+            return round($base + $ajuste);
+        }
     }
+
+    public function verCalendario() {
+        $inicioMes = now()->startOfMonth(); $finMes = now()->endOfMonth();
+        $rangoDias = CarbonPeriod::create($inicioMes, $finMes);
+        $datosHeatmap = auth()->user()->emociones()->selectRaw('DATE(created_at) as fecha, AVG(energia) as promedio')->whereBetween('created_at', [$inicioMes, $finMes])->groupBy('fecha')->get()->pluck('promedio', 'fecha');
+        return view('perfil.calendario', compact('datosHeatmap', 'rangoDias'));
+    }
+    public function index() { $historial = auth()->user()->emociones()->latest()->get(); return view('historial', compact('historial')); }
+    public function generarPDF() { $historial = auth()->user()->emociones()->latest()->get(); $user = auth()->user(); $pdf = Pdf::loadView('reportes.emociones', compact('historial', 'user')); return $pdf->download("Reporte_Neural_S-Emotion_{$user->nombre}.pdf"); }
+    public function destroy($id) { auth()->user()->emociones()->findOrFail($id)->delete(); return back()->with('status', 'Registro eliminado del sector de memoria.'); }
+    public function reiniciarHistorial() { auth()->user()->emociones()->delete(); return back()->with('status', 'MEMORIA PURGADA: El historial ha sido reiniciado.'); }
+    public function eliminarSeleccionados(Request $request) { $request->validate(['ids' => 'required|array']); auth()->user()->emociones()->whereIn('id', $request->ids)->delete(); return back()->with('status', 'SISTEMA ACTUALIZADO: Registros purgados.'); }
 }

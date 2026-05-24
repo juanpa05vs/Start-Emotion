@@ -159,7 +159,12 @@
                 <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" icon="fa-house-chimney" step="01" label="Inicio" />
                 <x-nav-link :href="route('historial.index')" :active="request()->routeIs('historial.*')" icon="fa-microchip" step="02" label="Historial" />
                 <x-nav-link :href="route('perfil.calendario')" :active="request()->routeIs('perfil.calendario')" icon="fa-calendar-days" step="03" label="Calendario" />
-                <x-nav-link :href="route('perfil.config')" :active="request()->routeIs('perfil.config')" icon="fa-gear" step="04" label="Terminal" sub="Personalización" />
+
+                {{-- [NUEVO] CAPA DE ACCESO AL HUB DE GAMIFICACIÓN --}}
+                <x-nav-link :href="route('minijuegos.index')" :active="request()->routeIs('minijuegos.*')" icon="fa-gamepad" step="04" label="Minijuegos" sub="Zona Recreativa" />
+
+                {{-- REAJUSTE DE TERMINAL A PASO 05 --}}
+                <x-nav-link :href="route('perfil.config')" :active="request()->routeIs('perfil.config')" icon="fa-gear" step="05" label="Terminal" sub="Personalización" />
 
                 {{-- SECCIÓN ADMINISTRACIÓN --}}
                 @if($user->esAdmin())
