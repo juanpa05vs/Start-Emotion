@@ -15,7 +15,10 @@ class UsuarioController extends Controller
      */
     public function index()
     {
-        if (!auth()->user()->esAdmin()) {
+        /** @var \App\Models\User|null $authUser */
+        $authUser = Auth::user();
+
+        if (!$authUser || !$authUser->esAdmin()) {
             return redirect()->route('dashboard')->with('error', 'Nivel Alpha requerido.');
         }
 
@@ -28,7 +31,7 @@ class UsuarioController extends Controller
      */
     public function updateRole(Request $request, User $user)
     {
-        if (auth()->id() === $user->id) {
+        if (Auth::id() === $user->id) {
             return redirect()->route('usuarios.index')->with('error', 'No puedes auto-degradarte.');
         }
 
@@ -42,7 +45,7 @@ class UsuarioController extends Controller
                 $user->syncRoles([$request->rol]);
             }
 
-            return redirect()->route('usuarios.index')->with('success', "Rango actualizado exitosamente.");
+            return redirect()->route('usuarios.index')->with('success', 'Rango actualizado exitosamente.');
         } catch (\Exception $e) {
             return redirect()->route('usuarios.index')->with('error', 'Fallo en la sincronización de protocolos.');
         }
@@ -53,7 +56,7 @@ class UsuarioController extends Controller
      */
     public function destroy(User $user)
     {
-        if (auth()->id() === $user->id) {
+        if (Auth::id() === $user->id) {
             return redirect()->route('usuarios.index')->with('error', 'Auto-eliminación denegada.');
         }
 
@@ -78,6 +81,7 @@ class UsuarioController extends Controller
      */
     public function updatePerfil(Request $request)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
         $request->validate([
@@ -114,7 +118,7 @@ class UsuarioController extends Controller
         ]);
 
         Feedback::create([
-            'user_id'    => auth()->id(),
+            'user_id'    => Auth::id(),
             'comentario' => $request->mensaje,
             'estado'     => 'PENDIENTE'
         ]);
@@ -127,7 +131,10 @@ class UsuarioController extends Controller
      */
     public function verFeedback()
     {
-        if (!auth()->user()->esAdmin()) {
+        /** @var \App\Models\User|null $authUser */
+        $authUser = Auth::user();
+
+        if (!$authUser || !$authUser->esAdmin()) {
             return redirect()->route('dashboard');
         }
 
@@ -140,7 +147,12 @@ class UsuarioController extends Controller
      */
     public function destroyFeedback(Feedback $feedback)
     {
-        if (!auth()->user()->esAdmin()) { return abort(403); }
+        /** @var \App\Models\User|null $authUser */
+        $authUser = Auth::user();
+
+        if (!$authUser || !$authUser->esAdmin()) {
+            return abort(403);
+        }
 
         $feedback->delete();
         return back()->with('success', 'Reporte eliminado del monitor.');
@@ -151,7 +163,12 @@ class UsuarioController extends Controller
      */
     public function updateFeedbackStatus(Feedback $feedback)
     {
-        if (!auth()->user()->esAdmin()) { return abort(403); }
+        /** @var \App\Models\User|null $authUser */
+        $authUser = Auth::user();
+
+        if (!$authUser || !$authUser->esAdmin()) {
+            return abort(403);
+        }
 
         $feedback->update(['estado' => 'resuelto']);
         return back()->with('success', 'Protocolo finalizado y archivado.');

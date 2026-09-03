@@ -1,10 +1,13 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmocionController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\DiagnosticoController;
+use App\Http\Controllers\EvaluacionPsicometricaController;
+use App\Http\Controllers\ValidacionCientificaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,7 +37,9 @@ Route::middleware(['auth'])->group(function () {
      * --- DASHBOARD: Monitor Primario ---
      */
     Route::get('/dashboard', function () {
-        $ultimoRegistro = auth()->user()->emociones()->latest()->first();
+        /** @var \App\Models\user|null $user */
+        $user = Auth::user();
+        $ultimoRegistro = $user ? $user->emociones()->latest()->first() : null;
         return view('dashboard', compact('ultimoRegistro'));
     })->name('dashboard');
 
@@ -56,6 +61,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/historial/eliminar-seleccionados', [EmocionController::class, 'eliminarSeleccionados'])->name('emociones.eliminarSeleccionados');
 
     /**
+     * --- EVALUACIÓN PSICOMÉTRICA: Gold Standard (Inventario SISCO) ---
+     */
+    Route::get('/evaluacion-psicometrica', [EvaluacionPsicometricaController::class, 'create'])->name('psicometria.create');
+    Route::post('/evaluacion-psicometrica', [EvaluacionPsicometricaController::class, 'store'])->name('psicometria.store');
+
+    /**
      * --- SECTOR RECREATIVO: Minijuegos de Recalibración (Gamificación) ---
      */
     // Menú Principal / Catálogo de Minijuegos
@@ -63,6 +74,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Juego 1: Adivina Quién Emocional (Código Anómalo)
     Route::get('/terminal/minijuegos/diagnostico', [DiagnosticoController::class, 'diagnostico'])->name('minijuegos.diagnostico');
+
+    // Endpoint de Telemetría Implícita (Latencia / Tapping / Inferencia Random Forest)
+    Route::post('/terminal/minijuegos/telemetria', [DiagnosticoController::class, 'guardarTelemetria'])->name('minijuegos.telemetria');
 
     /**
      * --- CONFIGURACIÓN DE IDENTIDAD: Terminal de Usuario ---
@@ -86,6 +100,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/feedback', [UsuarioController::class, 'verFeedback'])->name('admin.feedback');
         Route::delete('/admin/feedback/{feedback}', [UsuarioController::class, 'destroyFeedback'])->name('feedback.destroy');
         Route::patch('/admin/feedback/{feedback}/status', [UsuarioController::class, 'updateFeedbackStatus'])->name('feedback.updateStatus');
+
+        // 3. VALIDACIÓN DE IA: Matriz de Confusión, Métricas de Desempeño y Exportación de Datasets
+        Route::get('/admin/validacion-cientifica', [ValidacionCientificaController::class, 'index'])->name('admin.validacion');
+        Route::get('/admin/validacion-cientifica/exportar', [ValidacionCientificaController::class, 'exportarCSV'])->name('admin.validacion.exportar');
 
         // Seguridad: Evitar acceso GET a rutas de procesamiento
         Route::get('/usuarios/{user}/rol', function () {

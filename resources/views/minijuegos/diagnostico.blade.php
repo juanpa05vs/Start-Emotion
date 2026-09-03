@@ -41,15 +41,20 @@
 {{-- CAPA DE INTERFERENCIA CRÍTICA --}}
 <div id="glitch-overlay" class="glitch-flash-overlay"></div>
 
-<div class="p-6 max-w-6xl mx-auto">
+<div class="p-6 max-w-6xl mx-auto select-none">
 
     {{-- HUD SUPERIOR DE TELEMETRÍA --}}
     <div class="flex flex-col md:flex-row md:items-center md:justify-between border-b border-white/5 pb-4 mb-6">
         <div>
+            <div class="flex items-center gap-2 mb-1">
+                <span class="px-2.5 py-0.5 rounded-full text-[8px] font-black tracking-widest uppercase bg-cyan-500/10 text-neon-cyan border border-cyan-500/30 font-orbitron">
+                    TELEMETRÍA IMPLÍCITA // RANDOM FOREST CLASSIFIER
+                </span>
+            </div>
             <h1 class="font-orbitron text-2xl font-black adaptive-title uppercase tracking-tighter">
                 Análisis de <span class="text-accent">Código Anómalo</span>
             </h1>
-            <p class="text-gray-500 text-[9px] uppercase tracking-[0.3em] mt-1">Módulo de Depuración Emocional y Descarte de Variables</p>
+            <p class="text-gray-500 text-[9px] uppercase tracking-[0.3em] mt-1 font-semibold">Módulo de Depuración Emocional y Descarte de Variables</p>
         </div>
 
         <div class="mt-4 md:mt-0 flex gap-4 font-orbitron">
@@ -101,12 +106,12 @@
                 </div>
 
                 <div class="mt-6 pt-4 border-t border-white/5 flex gap-2">
-                    <button id="btn-next-clue" onclick="revealNextClue()" disabled
-                            class="flex-1 border border-white/10 text-gray-500 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all disabled:opacity-30">
+                    <button id="btn-next-clue" onclick="revealNextClue()"
+                            class="flex-1 border border-accent text-accent py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider hover:bg-accent/10 transition-all font-orbitron">
                         Solicitar Datos
                     </button>
                     <button id="btn-verdict" onclick="verifyDiagnosis()"
-                            class="flex-1 bg-accent text-white py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider hover:shadow-[0_0_15px_var(--neon-accent)] transition-all">
+                            class="flex-1 bg-accent text-white py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider hover:shadow-[0_0_15px_var(--neon-accent)] transition-all font-orbitron">
                         Aislar Anomalía
                     </button>
                 </div>
@@ -125,8 +130,11 @@
                 {{-- Inyección dinámica por JS --}}
             </div>
 
-            <div class="mt-4 flex justify-end">
-                <button onclick="initGame()" class="border border-white/10 text-gray-400 hover:border-white/30 px-5 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all">
+            <div class="mt-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+                <span id="telemetry-live-indicator" class="text-[8px] font-mono text-gray-500 uppercase tracking-widest font-orbitron">
+                    ● LOGGING_ACTIVE // LATENCY & TAPPING CAPTURE
+                </span>
+                <button onclick="initGame()" class="border border-white/10 text-gray-400 hover:border-white/30 px-5 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all font-orbitron">
                     <i class="fa-solid fa-arrows-rotate mr-1"></i> Reiniciar Matriz
                 </button>
             </div>
@@ -138,7 +146,11 @@
 
 @push('scripts')
 <script>
-    // Audio FX Engine (Web Audio API nativa)
+    /*
+    |--------------------------------------------------------------------------
+    | AUDIO FX ENGINE (Web Audio API nativa)
+    |--------------------------------------------------------------------------
+    */
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     function playSound(type) {
@@ -170,9 +182,13 @@
         }
     }
 
-    // Banco de Datos estructural del Adivina Quién (Enfoque Universitario)
+    /*
+    |--------------------------------------------------------------------------
+    | BANCO DE CASOS Y ESTADOS CONDUCTUALES (UNIVERSITARIOS)
+    |--------------------------------------------------------------------------
+    */
     const bancoEmociones = [
-        { id: 'ansiedad', nombre: 'Ansiedad', icono: 'fa-bolt-lightning', sintomas: 'Palpitaciones aceleradas, respiración entrecortada superficial y manos frías.', detonante: 'Faltan 2 hours para la entrega del proyecto y el servidor local empieza a tirar Errores 500.', cognitivo: 'Bucle lógico: "No va a funcionar, voy a reprobar todo el parcial por esto y arruinaré mi promedio".' },
+        { id: 'ansiedad', nombre: 'Ansiedad', icono: 'fa-bolt-lightning', sintomas: 'Palpitaciones aceleradas, respiración entrecortada superficial y manos frías.', detonante: 'Faltan 2 horas para la entrega del proyecto y el servidor local empieza a tirar Errores 500.', cognitivo: 'Bucle lógico: "No va a funcionar, voy a reprobar todo el parcial por esto y arruinaré mi promedio".' },
         { id: 'ira', nombre: 'Ira', icono: 'fa-fire-flame-curved', sintomas: 'Mandíbula tensa y apretada, calor súbito en el rostro y aceleración del pulso.', detonante: 'Un compañero de equipo borró la rama principal del repositorio de Git y se desconectó.', cognitivo: 'Bucle lógico: "¡Es una falta de respeto total, siempre echan a perder el trabajo ajeno!".' },
         { id: 'frustracion', nombre: 'Frustración', icono: 'fa-triangle-exclamation', sintomas: 'Rigidez muscular severa en hombros, suspiros repetitivos y pesadez mental.', detonante: 'Llevas 6 horas intentando corregir un bug de migración de base de datos sin éxito.', cognitivo: 'Bucle lógico: "Por más que investigo no avanzo nada, tal vez la ingeniería de sistemas no es para mí".' },
         { id: 'melancolia', nombre: 'Melancolía', icono: 'fa-cloud-showers-water', sintomas: 'Desgano motriz generalizado, mirada fija desenfocada y opresión leve en el pecho.', detonante: 'Encontraste una carpeta de fotos viejas de tus primeros semestres presenciales en el TESVB.', cognitivo: 'Bucle lógico: "Esos tiempos eran mucho más felices y sencillos, las cosas se han vuelto muy frías ahora".' },
@@ -182,6 +198,11 @@
         { id: 'culpa', nombre: 'Culpa', icono: 'fa-shield-halved', sintomas: 'Sensación de nudo vacío en el estómago, evitación del entorno y malestar interno.', detonante: 'Te quedaste dormido y faltaste a la exposición en equipo donde tú tenías las diapositivas finales.', cognitivo: 'Bucle lógico: "Es mi culpa que mis compañeros tengan mala nota, soy un pésimo compañero de equipo".' }
     ];
 
+    /*
+    |--------------------------------------------------------------------------
+    | VARIABLES DE ESTADO Y TELEMETRÍA IMPLÍCITA (BIOMARCADORES)
+    |--------------------------------------------------------------------------
+    */
     let emocionSecreta = null;
     let sospechosoSeleccionado = null;
     let pistaActual = 1;
@@ -189,6 +210,15 @@
     let estadosTarjetas = {};
     let gameTimer = null;
     let coreTemp = 0;
+
+    // Métricas de Computación Afectiva
+    let startTime = 0;
+    let lastEventTime = 0;
+    let tapTimestamps = [];
+    let latencies = [];
+    let rectificacionesCount = 0;
+    let erroresCount = 0;
+    let telemetriaPersistida = false;
 
     function initGame() {
         if (gameTimer) clearInterval(gameTimer);
@@ -198,6 +228,15 @@
         coreTemp = 0;
         sospechosoSeleccionado = null;
         estadosTarjetas = {};
+        telemetriaPersistida = false;
+
+        // Reiniciar métricas científicas
+        startTime = performance.now();
+        lastEventTime = performance.now();
+        tapTimestamps = [];
+        latencies = [];
+        rectificacionesCount = 0;
+        erroresCount = 0;
 
         emocionSecreta = bancoEmociones[Math.floor(Math.random() * bancoEmociones.length)];
 
@@ -209,7 +248,7 @@
         document.getElementById('temp-bar').style.width = "0%";
 
         document.getElementById('btn-next-clue').disabled = false;
-        document.getElementById('btn-next-clue').className = "flex-1 border border-accent text-accent py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider hover:bg-accent/10 transition-all";
+        document.getElementById('btn-next-clue').className = "flex-1 border border-accent text-accent py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider hover:bg-accent/10 transition-all font-orbitron";
         document.getElementById('btn-verdict').disabled = false;
 
         document.getElementById('wrapper-detonante').classList.add('opacity-25');
@@ -221,8 +260,9 @@
 
         document.getElementById('system-feedback').innerText = 'Analiza la Capa 01. Usa el botón de ojo para tirar las pestañas de las emociones falsas.';
         document.getElementById('system-feedback').className = "text-gray-400 text-[10px] uppercase tracking-wider font-semibold";
+        document.getElementById('telemetry-live-indicator').innerHTML = `● LOGGING_ACTIVE // LATENCY & TAPPING CAPTURE`;
 
-        // Lanzar Reloj de Temperatura (60s totales)
+        // Reloj de Temperatura (60s)
         gameTimer = setInterval(() => {
             coreTemp += 1.66;
             let displayTemp = Math.round(coreTemp);
@@ -242,6 +282,13 @@
         }, 1000);
 
         renderMatrix();
+    }
+
+    function recordInteractionLatency() {
+        const now = performance.now();
+        const delta = now - lastEventTime;
+        latencies.push(delta);
+        lastEventTime = now;
     }
 
     function renderMatrix() {
@@ -286,6 +333,9 @@
         if (estadosTarjetas[id].tumbada && sospechosoSeleccionado === id) {
             sospechosoSeleccionado = null;
         }
+
+        rectificacionesCount++;
+        recordInteractionLatency();
         renderMatrix();
     }
 
@@ -293,11 +343,16 @@
         if (estadosTarjetas[id].tumbada) return;
         playSound('click');
         sospechosoSeleccionado = (sospechosoSeleccionado === id) ? null : id;
+
+        rectificacionesCount++;
+        recordInteractionLatency();
         renderMatrix();
     }
 
     function revealNextClue() {
         playSound('click');
+        recordInteractionLatency();
+
         if (pistaActual === 1) {
             pistaActual = 2;
             score -= 25;
@@ -310,29 +365,32 @@
             document.getElementById('clue-cognitivo').innerText = emocionSecreta.cognitivo;
 
             document.getElementById('btn-next-clue').disabled = true;
-            document.getElementById('btn-next-clue').className = "flex-1 bg-white/5 border border-white/5 text-gray-600 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider cursor-not-allowed";
+            document.getElementById('btn-next-clue').className = "flex-1 bg-white/5 border border-white/5 text-gray-600 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider cursor-not-allowed font-orbitron";
         }
 
         document.getElementById('hud-score').innerText = `${score} PTS`;
         if (score <= 50) document.getElementById('hud-score').className = "text-sm font-black text-rose-500 animate-pulse";
     }
 
-    // TRIGGER GLITCH EFFECT (DISPARADOR ELECTRÓNICO)
+    // TRIGGER GLITCH EFFECT (INTERFERENCIA DE PANTALLA)
     function triggerGlitchInterference() {
         const overlay = document.getElementById('glitch-overlay');
         const gamePanel = document.getElementById('master-game-panel');
 
-        // Encender destello e interferencia de sacudida
         overlay.classList.add('active');
         gamePanel.classList.add('terminal-error-glitch');
 
-        // Apagar efectos tras 350 milisegundos
         setTimeout(() => {
             overlay.classList.remove('active');
             gamePanel.classList.remove('terminal-error-glitch');
         }, 350);
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | VERIFICACIÓN DE DIAGNÓSTICO Y PERSISTENCIA DE TELEMETRÍA
+    |--------------------------------------------------------------------------
+    */
     function verifyDiagnosis() {
         if (!sospechosoSeleccionado) {
             playSound('error');
@@ -342,11 +400,13 @@
             return;
         }
 
+        recordInteractionLatency();
+
         if (sospechosoSeleccionado === emocionSecreta.id) {
             clearInterval(gameTimer);
             playSound('success');
 
-            document.getElementById('system-feedback').innerText = `¡DIAGNÓSTICO EXITOSO! Anomalía resuelta. Identificaste correctamente la ${emocionSecreta.nombre.toUpperCase()}. Sistema Estabilizado.`;
+            document.getElementById('system-feedback').innerText = `¡DIAGNÓSTICO EXITOSO! Anomalía resuelta. Identificaste correctamente la ${emocionSecreta.nombre.toUpperCase()}. Sincronizando inferencia Random Forest...`;
             document.getElementById('system-feedback').className = "text-emerald-400 text-[10px] uppercase tracking-widest font-black border border-emerald-500/20 p-2 rounded-lg bg-emerald-500/5";
 
             document.getElementById('btn-next-clue').disabled = true;
@@ -354,10 +414,13 @@
 
             document.getElementById('hud-score').innerText = `CONCLUIDO // ${score} PTS`;
             document.getElementById('hud-score').className = "text-sm font-black text-emerald-400 shadow-accent";
+
+            enviarTelemetriaBackend(true);
         } else {
-            // DETECTÓ ERROR -> DISPARAR INTERFERENCIA ELECTRÓNICA
+            // Error en la detección
             playSound('error');
             triggerGlitchInterference();
+            erroresCount++;
 
             score -= 20;
             if (score < 0) score = 0;
@@ -385,7 +448,82 @@
 
         document.getElementById('hud-score').innerText = "FAILED // 0 PTS";
         document.getElementById('hud-score').className = "text-sm font-black text-rose-500 animate-pulse";
+
+        enviarTelemetriaBackend(false);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | DISPATCH ASÍNCRONO DE TELEMETRÍA AL BACKEND (LARAVEL API + RANDOM FOREST)
+    |--------------------------------------------------------------------------
+    */
+    function enviarTelemetriaBackend(isCorrect) {
+        if (telemetriaPersistida) return;
+        telemetriaPersistida = true;
+
+        const totalDurationMs = Math.round(performance.now() - startTime);
+
+        const avgLatencyMs = latencies.length > 0
+            ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length)
+            : totalDurationMs;
+
+        const tappingRate = tapTimestamps.length > 1
+            ? parseFloat((tapTimestamps.length / (totalDurationMs / 1000)).toFixed(2))
+            : 0.5;
+
+        const payload = {
+            minijuego_id: 'codigo_anomalo',
+            latencia_promedio_ms: avgLatencyMs,
+            frecuencia_tapping: tappingRate,
+            tiempo_total_ms: totalDurationMs,
+            conteo_rectificaciones: rectificacionesCount,
+            errores_diagnostico: erroresCount,
+            score_final: score,
+            emocion_objetivo: emocionSecreta.id,
+            emocion_predicha: sospechosoSeleccionado || 'ninguno',
+            diagnostico_correcto: isCorrect,
+            vector_caracteristicas: [avgLatencyMs, tappingRate, totalDurationMs, rectificacionesCount, score]
+        };
+
+        fetch("{{ route('minijuegos.telemetria') }}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.ia_output) {
+                const ia = data.ia_output;
+                document.getElementById('telemetry-live-indicator').innerHTML = `
+                    <span class="text-emerald-400 font-bold">
+                        ● RANDOM_FOREST_ACTIVE // PREDICCIÓN IA: [ ${ia.prediccion.toUpperCase()} ] // CERTEZA: ${ia.confianza}% // LATENCIA: ${avgLatencyMs}ms
+                    </span>
+                `;
+
+                document.getElementById('system-feedback').innerHTML = `
+                    <span class="text-accent font-bold font-orbitron">[ INFERENCIA IA COMPLETADA ]</span>
+                    El ensamble de Bosques Aleatorios clasificó tu comportamiento como <strong>${ia.prediccion.toUpperCase()}</strong> con <strong>${ia.confianza}%</strong> de certidumbre matemática.
+                `;
+            } else {
+                document.getElementById('telemetry-live-indicator').innerHTML = `
+                    <span class="text-emerald-400 font-bold">● BIO-DATA PERSISTIDA // ID: #${data.id} // LATENCIA: ${avgLatencyMs}ms // CADENCIA: ${tappingRate} taps/s</span>
+                `;
+            }
+        })
+        .catch(err => {
+            console.error("Error al registrar telemetría:", err);
+        });
+    }
+
+    // Escuchador global para medir la cadencia motriz (Tapping Rate)
+    document.addEventListener('pointerdown', () => {
+        if (!telemetriaPersistida) {
+            tapTimestamps.push(performance.now());
+        }
+    });
 
     document.addEventListener('DOMContentLoaded', initGame);
 </script>

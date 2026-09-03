@@ -45,7 +45,7 @@
         }
 
         $user = auth()->user();
-        $temaActual = $user->tema ?? 'blue';
+        $temaActual = $user?->tema ?? 'blue';
 
         $accentColor = [
             'blue'   => '#22d3ee', // Neon Cyan
@@ -65,7 +65,7 @@
             --neon-purple: #a855f7;
             --neon-rose: #f43f5e;
 
-            /* [NUEVO] Abstracción de colores de entorno para soporte de modos */
+            /* Abstracción de colores de entorno para soporte de modos */
             --bg-primary: #030712;
             --bg-sidebar: rgba(0, 0, 0, 0.6);
             --border-system: rgba(255, 255, 255, 0.1);
@@ -74,7 +74,7 @@
             --scanline-opacity: 0.02;
         }
 
-        /* [NUEVO] Mutación del ecosistema al Modo Claro */
+        /* Mutación del ecosistema al Modo Claro */
         html.light-mode {
             --bg-primary: #f1f5f9;
             --bg-sidebar: rgba(255, 255, 255, 0.8);
@@ -147,31 +147,38 @@
                     </h2>
                     <div class="flex items-center gap-2 mt-1">
                         <span class="h-[1px] w-8 border-t border-accent opacity-50"></span>
-                        <p class="text-[7px] text-accent opacity-60 uppercase tracking-[0.5em] font-black">Control Panel v1.0</p>
+                        <p class="text-[7px] text-accent opacity-60 uppercase tracking-[0.5em] font-black font-orbitron">Control Panel v1.0</p>
                     </div>
                 </a>
             </div>
 
             {{-- NAVEGACIÓN --}}
             <nav class="flex-1 px-4 space-y-2 overflow-y-auto">
-                <p class="text-[9px] text-gray-500 uppercase tracking-[0.3em] font-black mb-4 pl-4">Menú de Mando</p>
+                <p class="text-[9px] text-gray-500 uppercase tracking-[0.3em] font-black mb-4 pl-4 font-orbitron">Menú de Mando</p>
 
                 <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" icon="fa-house-chimney" step="01" label="Inicio" />
+
                 <x-nav-link :href="route('historial.index')" :active="request()->routeIs('historial.*')" icon="fa-microchip" step="02" label="Historial" />
-                <x-nav-link :href="route('perfil.calendario')" :active="request()->routeIs('perfil.calendario')" icon="fa-calendar-days" step="03" label="Calendario" />
 
-                {{-- [NUEVO] CAPA DE ACCESO AL HUB DE GAMIFICACIÓN --}}
-                <x-nav-link :href="route('minijuegos.index')" :active="request()->routeIs('minijuegos.*')" icon="fa-gamepad" step="04" label="Minijuegos" sub="Zona Recreativa" />
+                {{-- MÓDULO PSICOMÉTRICO (GOLD STANDARD SISCO) --}}
+                <x-nav-link :href="route('psicometria.create')" :active="request()->routeIs('psicometria.*')" icon="fa-brain" step="03" label="Calibración SISCO" sub="Gold Standard" />
 
-                {{-- REAJUSTE DE TERMINAL A PASO 05 --}}
-                <x-nav-link :href="route('perfil.config')" :active="request()->routeIs('perfil.config')" icon="fa-gear" step="05" label="Terminal" sub="Personalización" />
+                <x-nav-link :href="route('perfil.calendario')" :active="request()->routeIs('perfil.calendario')" icon="fa-calendar-days" step="04" label="Calendario" />
+
+                <x-nav-link :href="route('minijuegos.index')" :active="request()->routeIs('minijuegos.*')" icon="fa-gamepad" step="05" label="Minijuegos" sub="Zona Recreativa" />
+
+                <x-nav-link :href="route('perfil.config')" :active="request()->routeIs('perfil.config')" icon="fa-gear" step="06" label="Terminal" sub="Personalización" />
 
                 {{-- SECCIÓN ADMINISTRACIÓN --}}
-                @if($user->esAdmin())
+                @if($user && $user->esAdmin())
                     <div class="pt-8 mt-6 border-t border-white/5">
-                        <p class="text-[9px] text-gray-500 uppercase tracking-[0.3em] font-black mb-4 pl-4">Alpha Sector</p>
+                        <p class="text-[9px] text-gray-500 uppercase tracking-[0.3em] font-black mb-4 pl-4 font-orbitron">Alpha Sector</p>
 
                         <x-nav-link :href="route('usuarios.index')" :active="request()->routeIs('usuarios.*')" icon="fa-users-gear" step="AA" label="Usuarios" />
+
+                        {{-- MÓDULO DE VALIDACIÓN Y MÉTRICAS DE IA --}}
+                        <x-nav-link :href="route('admin.validacion')" :active="request()->routeIs('admin.validacion*')" icon="fa-chart-pie" step="VC" label="Validación FECIEM" sub="Métricas de IA" />
+
                         <x-nav-link :href="route('admin.feedback')" :active="request()->routeIs('admin.feedback')" icon="fa-comment-medical" step="FB" label="Monitor Feedback" sub="Mejora Continua" />
                     </div>
                 @endif
@@ -183,23 +190,23 @@
                     <div class="flex items-center gap-3">
                         <div class="relative h-10 w-10 shrink-0">
                             <span class="animate-ping absolute h-full w-full rounded-full bg-accent opacity-20"></span>
-                            @if($user->avatar)
+                            @if($user && $user->avatar)
                                 <img src="{{ asset('storage/' . $user->avatar) }}" class="h-10 w-10 rounded-full object-cover border border-accent/50 relative z-10">
                             @else
                                 <div class="relative z-10 rounded-full h-10 w-10 bg-accent-soft border border-accent/50 flex items-center justify-center text-accent font-black text-xs font-orbitron">
-                                    {{ substr($user->nombre, 0, 1) }}
+                                    {{ substr($user->nombre ?? 'U', 0, 1) }}
                                 </div>
                             @endif
                         </div>
                         <div class="flex flex-col min-w-0">
-                            <p class="text-[10px] font-black adaptive-title truncate uppercase">{{ $user->nombre }}</p>
-                            <p class="text-[7px] text-accent font-bold tracking-[0.2em] uppercase">Status: Online</p>
+                            <p class="text-[10px] font-black adaptive-title truncate uppercase font-orbitron">{{ $user->nombre ?? 'Usuario' }}</p>
+                            <p class="text-[7px] text-accent font-bold tracking-[0.2em] uppercase font-orbitron">Status: Online</p>
                         </div>
                     </div>
 
                     <form action="{{ route('logout') }}" method="POST" class="mt-4">
                         @csrf
-                        <button type="submit" class="w-full py-2 bg-neon-rose/10 border border-neon-rose/30 text-neon-rose rounded-lg text-[8px] font-black uppercase tracking-[0.3em] hover:bg-neon-rose hover:text-white transition-all active:scale-95">
+                        <button type="submit" class="w-full py-2 bg-neon-rose/10 border border-neon-rose/30 text-neon-rose rounded-lg text-[8px] font-black uppercase tracking-[0.3em] hover:bg-neon-rose hover:text-white transition-all active:scale-95 font-orbitron">
                             [ TERMINAR_SESIÓN ]
                         </button>
                     </form>
@@ -211,10 +218,17 @@
         {{-- MAIN CONTENT --}}
         <main class="flex-1 p-10 relative">
             <div class="max-w-7xl mx-auto">
-                {{-- Alertas del Sistema --}}
+                {{-- Alerta de Éxito --}}
                 @if(session('success'))
-                    <div class="mb-6 p-4 bg-accent-soft border border-accent/30 rounded-xl adaptive-title text-[10px] font-bold uppercase tracking-widest flex items-center shadow-accent animate-pulse">
+                    <div class="mb-6 p-4 bg-accent-soft border border-accent/30 rounded-xl adaptive-title text-[10px] font-bold uppercase tracking-widest flex items-center shadow-accent animate-pulse font-orbitron">
                         <i class="fa-solid fa-check-double text-accent mr-3 text-sm"></i> {{ session('success') }}
+                    </div>
+                @endif
+
+                {{-- Alerta de Error / Alerta Crítica --}}
+                @if(session('error'))
+                    <div class="mb-6 p-4 bg-neon-rose/10 border border-neon-rose/30 rounded-xl text-neon-rose text-[10px] font-black uppercase tracking-widest flex items-center shadow-[0_0_15px_rgba(244,63,94,0.2)] font-orbitron">
+                        <i class="fa-solid fa-triangle-exclamation mr-3 text-sm"></i> {{ session('error') }}
                     </div>
                 @endif
 

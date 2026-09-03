@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Spatie\Permission\Traits\HasRoles; // El motor de seguridad Alpha
+use Spatie\Permission\Traits\HasRoles; // Motor de seguridad Alpha
 
 class User extends Authenticatable
 {
@@ -44,26 +44,64 @@ class User extends Authenticatable
         ];
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | RELACIONES DE TELEMETRÍA, INVESTIGACIÓN Y BIENESTAR
+    |--------------------------------------------------------------------------
+    */
+
     /**
-     * RELACIÓN: Sincronizada con la llave foránea 'user_id'.
-     * [REPARACIÓN]: Cambiamos 'usuario_id' a 'user_id' para coincidir con la migración.
+     * Registro básico de telemetría emocional (Módulo Dashboard).
      */
     public function emociones()
     {
-        // Apuntamos al modelo RegistroEmocion usando la FK correcta: user_id
         return $this->hasMany(RegistroEmocion::class, 'user_id');
     }
 
     /**
-     * HELPER DE NIVEL ALPHA (esAdmin)
-     * [SEGURIDAD]: Verifica el acceso administrativo de forma robusta.
+     * Evaluaciones psicométricas estandarizadas (Gold Standard / Test SISCO).
+     */
+    public function evaluacionesPsicometricas()
+    {
+        return $this->hasMany(EvaluacionPsicometrica::class, 'user_id');
+    }
+
+    /**
+     * Telemetría conductual capturada durante las sesiones de juego (Latencia y Tapping).
+     */
+    public function telemetriasGameplay()
+    {
+        return $this->hasMany(TelemetriaGameplay::class, 'user_id');
+    }
+
+    /**
+     * Feedback y reportes del sistema.
      */
     public function feedbacks()
     {
         return $this->hasMany(Feedback::class, 'user_id');
     }
 
-    public function esAdmin()
+    /*
+    |--------------------------------------------------------------------------
+    | HELPERS DE INGENIERÍA, SEGURIDAD Y BIOÉTICA
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Genera un identificador anonimizado para exportación científica y cumplimiento bioético.
+     * Ejemplo de salida: TESVB-SIST-0042
+     */
+    public function getCodigoAnonimoAttribute(): string
+    {
+        return 'TESVB-SIST-' . str_pad($this->id, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * HELPER DE NIVEL ALPHA (esAdmin)
+     * Verifica el acceso administrativo de forma robusta.
+     */
+    public function esAdmin(): bool
     {
         // 1. Verifica por la columna 'rol' (para compatibilidad visual en BD)
         if ($this->rol && trim(strtolower($this->rol)) === 'administrador') {
