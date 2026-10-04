@@ -13,6 +13,7 @@ ENV RUN_SCRIPTS 1
 ENV REAL_IP_HEADER 1
 ENV COMPOSER_ALLOW_SUPERUSER 1
 ENV LOG_CHANNEL stderr
+ENV ENABLE_PRESTISSIMO 0
 
 # Instalar dependencias de Composer
 RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
