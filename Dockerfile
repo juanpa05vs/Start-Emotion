@@ -11,3 +11,5 @@ ENV REAL_IP_HEADER 1
 
 # Permitir el uso de Composer como superusuario
 ENV COMPOSER_ALLOW_SUPERUSER 1
+
+RUN composer install --no-dev --optimize-autoloader
