@@ -3,6 +3,9 @@
 echo "Instalando dependencias con Composer..."
 composer install --no-dev --working-dir=/var/www/html
 
+echo "Asegurando permisos de almacenamiento..."
+chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache
+
 echo "Ejecutando migraciones de la base de datos..."
 php artisan migrate --force
 
