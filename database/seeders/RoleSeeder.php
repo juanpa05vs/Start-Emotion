@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class RoleSeeder extends Seeder
@@ -21,7 +21,10 @@ class RoleSeeder extends Seeder
             'gestionar.usuarios',
             'ver.historial',
             'registrar.emocion',
-            'ver.calendario', // Añadimos este para tu nuevo módulo 04
+            'ver.calendario',
+            'ver.pacientes',
+            'gestionar.consentimientos',
+            'gestionar.invitaciones',
         ];
 
         foreach ($permisos as $permiso) {
@@ -29,19 +32,33 @@ class RoleSeeder extends Seeder
         }
 
         // 3. CONFIGURACIÓN DE ROLES
+        //
+        // Tres roles con propósitos distintos:
+        //   - estudiante: usa la herramienta para sí mismo. Es dueño de sus datos.
+        //   - Psicólogo:  atiende estudiantes. Solo ve lo que le compartan explícitamente.
+        //   - Administrador: gestiona el sistema (cuentas, configuración). No es
+        //     una figura clínica y por eso su acceso a los datos de salud mental
+        //     también pasa por consentimiento, no por ser administrador.
 
-        // ROL ALPHA: Administrador
-        // [PSICOLOGÍA]: El administrador tiene control total para reducir la fricción de gestión.
         $admin = Role::firstOrCreate(['name' => 'Administrador', 'guard_name' => 'web']);
-        $admin->syncPermissions(Permission::all()); // Le damos TODO
+        $admin->syncPermissions(Permission::all());
 
-        // ROL BETA: jugador (Cambiamos 'Usuario' por 'jugador' para consistencia técnica)
-        $jugador = Role::firstOrCreate(['name' => 'jugador', 'guard_name' => 'web']);
-        $jugador->syncPermissions([
+        $estudiante = Role::firstOrCreate(['name' => 'estudiante', 'guard_name' => 'web']);
+        $estudiante->syncPermissions([
             'ver.dashboard',
             'ver.historial',
             'registrar.emocion',
             'ver.calendario',
+        ]);
+
+        // El profesional NO recibe los permisos del estudiante. Puede consultar
+        // lo que un paciente autorizó, pero no puede registrar emociones "en su
+        // nombre" ni alterar su historial: los datos del paciente son suyos.
+        $psicologo = Role::firstOrCreate(['name' => 'Psicólogo', 'guard_name' => 'web']);
+        $psicologo->syncPermissions([
+            'ver.pacientes',
+            'gestionar.consentimientos',
+            'gestionar.invitaciones',
         ]);
     }
 }

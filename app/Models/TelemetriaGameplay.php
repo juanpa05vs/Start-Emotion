@@ -12,7 +12,6 @@ class TelemetriaGameplay extends Model
     protected $table = 'telemetria_gameplay';
 
     protected $fillable = [
-        'user_id',
         'minijuego_id',
         'latencia_promedio_ms',
         'frecuencia_tapping',
@@ -28,11 +27,17 @@ class TelemetriaGameplay extends Model
 
     protected $casts = [
         'vector_caracteristicas' => 'array',
-        'diagnostico_correcto'   => 'boolean',
+        'diagnostico_correcto' => 'boolean',
+        'latencia_promedio_ms' => 'decimal:2',
+        'frecuencia_tapping' => 'decimal:2',
+        'tiempo_total_ms' => 'integer',
+        'conteo_rectificaciones' => 'integer',
+        'errores_diagnostico' => 'integer',
+        'score_final' => 'integer',
     ];
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

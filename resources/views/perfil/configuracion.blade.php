@@ -1,181 +1,271 @@
 @extends('layouts.app')
 
-@section('content')
-<div class="p-8 max-w-5xl mx-auto">
-    {{-- ENCABEZADO --}}
-    <h1 class="font-orbitron text-3xl font-black text-white mb-2 uppercase tracking-tighter">
-        Configuración de <span class="text-accent">Terminal</span>
-    </h1>
-    <p class="text-gray-500 text-[10px] uppercase tracking-[0.3em] mb-6">Personalización de Interfaz y Datos de Operador</p>
+@section('title', 'Ajustes | S-Emotion')
 
-    {{-- [SENSORES DE ESTADO]: Bloque de Alertas para Feedback visual --}}
+@section('content')
+{{-- El contenedor no lleva `p-*`: el `<main>` de la maqueta ya pone el
+     relleno. Con las dos capas, en pantallas anchas el contenido se encoge
+     hacia el centro de un hueco que no hace falta. --}}
+<div class="max-w-4xl">
+
+    <div class="mb-7">
+        <h1 class="font-orbitron text-2xl font-bold tracking-tight adaptive-title">Ajustes</h1>
+        <p class="mt-1.5 text-[13px] text-gray-400">
+            Tus datos, el color de la aplicación y el modo claro u oscuro.
+        </p>
+    </div>
+
+    {{-- Los avisos van con el mismo criterio que el resto de la aplicación:
+         icono, texto en cuerpo normal y borde de color. Estaban en 10px en
+         mayúsculas con `animate-pulse`, que para un «cambios guardados» es
+         demasiado: parpadea por confirmación, no por urgencia. --}}
     @if (session('success'))
-        <div class="mb-6 p-4 bg-accent/20 border border-accent text-accent text-[10px] font-black uppercase tracking-widest rounded-xl animate-pulse">
-            <i class="fa-solid fa-check-double mr-2"></i> {{ session('success') }}
+        <div role="status"
+             class="mb-5 flex items-start gap-3 rounded-panel border border-accent/30 bg-accent-soft px-4 py-3.5">
+            <i class="fa-solid fa-circle-check mt-0.5 text-[12px] text-accent-text" aria-hidden="true"></i>
+            <p class="text-[13px] leading-relaxed text-accent-text">{{ session('success') }}</p>
         </div>
     @endif
 
     @if ($errors->any())
-        <div class="mb-6 p-4 bg-red-500/20 border border-red-500 text-red-500 text-[10px] font-black uppercase tracking-widest rounded-xl">
-            <ul>
+        <div role="alert"
+             class="mb-5 rounded-panel border border-rose-500/40 bg-rose-500/10 px-4 py-3.5">
+            <p class="mb-1.5 flex items-center gap-2 text-[13px] font-semibold text-rose-300">
+                <i class="fa-solid fa-triangle-exclamation text-[12px]" aria-hidden="true"></i>
+                No se ha podido guardar
+            </p>
+            <ul class="ml-6 list-disc space-y-0.5 text-[13px] leading-relaxed text-rose-200">
                 @foreach ($errors->all() as $error)
-                    <li><i class="fa-solid fa-triangle-exclamation mr-2"></i> {{ $error }}</li>
+                    <li>{{ $error }}</li>
                 @endforeach
             </ul>
         </div>
     @endif
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    {{--
+        Tres módulos: quién eres, cómo se ve la aplicación, y avisar de un
+        problema.
 
-        {{-- COLUMNA IZQUIERDA: IDENTIDAD Y TEMAS --}}
-        <div class="space-y-6">
+        Antes era una rejilla de cuatro bloques que en móvil se convertían en un
+        scroll largo, y el scroll acababa donde estaba el formulario de nombre y
+        correo, que es lo que más se visita. Cada módulo agrupa lo que se ajusta
+        junto: la foto y los datos son quién eres; el color y el modo son cómo se
+        ve; el comentario va solo porque no es un ajuste sino un envío.
 
-            {{-- AVATAR --}}
-            <div class="bg-black/40 border border-white/10 backdrop-blur-xl p-6 rounded-2xl text-center relative overflow-hidden group">
-                <div class="absolute inset-0 bg-accent/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        «Apariencia» va segundo y no en último lugar a propósito: cambiar el tema
+        es lo que más se hace aquí después de cambiar el nombre, y no debe estar
+        a dos scrolls de la entrada.
+    --}}
+    <x-modulos :modulos="[
+        ['id' => 'perfil',      'titulo' => 'Tu perfil',  'icono' => 'fa-user'],
+        ['id' => 'apariencia',  'titulo' => 'Apariencia', 'icono' => 'fa-palette'],
+        ['id' => 'comentarios', 'titulo' => 'Comentarios', 'icono' => 'fa-comment-dots'],
+    ]">
+        {{-- ── PERFIL ────────────────────────────────────────────────────
+             El avatar y los datos en la misma columna: los dos formularios van al
+             mismo destino y guardar uno no guarda el otro, así que van separados
+             y con su propio botón, pero en la misma pantalla. --}}
+        <x-modulo id="perfil" activo>
+            <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+                <section class="surface rounded-panel p-5">
+                    <h2 class="sr-only">Tu avatar</h2>
 
-                <form action="{{ route('perfil.update') }}" method="POST" enctype="multipart/form-data" id="avatarForm">
+                    <form action="{{ route('perfil.update') }}" method="POST" enctype="multipart/form-data" id="avatarForm">
+                        @csrf
+                        @method('PATCH')
+
+                        <div class="relative inline-block">
+                            <div class="h-24 w-24 overflow-hidden rounded-pill border border-accent/40 bg-black p-0.5">
+                                <img src="{{ auth()->user()->avatar
+                                        ? asset('storage/' . auth()->user()->avatar)
+                                        : 'https://ui-avatars.com/api/?name='.urlencode(auth()->user()->nombre).'&background=000&color=fff' }}"
+                                     id="avatarPreview"
+                                     alt="Tu avatar"
+                                     class="h-full w-full rounded-pill object-cover">
+                            </div>
+
+                            {{-- El `<input type=file>` se manda solo al elegir archivo, así
+                                 que el botón no es un adorno: es el único control del
+                                 formulario. Sin `aria-label` no tendría nombre accesible,
+                                 porque dentro solo hay un icono.
+
+                                 La etiqueta del archivo no lleva `.btn` a propósito: es un
+                                 botón circular superpuesto a la imagen, no un rectángulo con
+                                 texto, y forzarle el aspecto de `.btn` lo deformaría. Sí
+                                 lleva el hundido al pulsar, que es lo que un control
+                                 pulsable tiene que hacer. --}}
+                            <label for="avatarInput"
+                                   class="absolute bottom-0 right-0 flex h-8 w-8 cursor-pointer items-center justify-center rounded-pill border border-accent bg-accent text-accent-ink transition-transform hover:scale-105 active:scale-95">
+                                <i class="fa-solid fa-camera text-[11px]" aria-hidden="true"></i>
+                            </label>
+
+                            <input type="file" name="avatar" id="avatarInput" class="sr-only" accept="image/*"
+                                   onchange="document.getElementById('avatarForm').submit()">
+                        </div>
+                    </form>
+
+                    <p class="mt-4 text-[14px] font-semibold text-white">{{ auth()->user()->nombre }}</p>
+                    <p class="mt-0.5 text-[12px] text-gray-500">{{ auth()->user()->rol }}</p>
+
+                    <p class="mt-3 text-[12px] leading-relaxed text-gray-500">
+                        Al elegir una imagen se guarda y se aplica al momento.
+                    </p>
+                </section>
+
+                <form action="{{ route('perfil.update') }}" method="POST" class="surface rounded-panel p-5 lg:col-span-2">
                     @csrf
                     @method('PATCH')
 
-                    <div class="relative inline-block">
-                        <div class="h-32 w-32 rounded-full border-2 border-accent p-1 overflow-hidden bg-black shadow-[0_0_25px_rgba(0,0,0,0.5)]">
-                            <img src="{{ auth()->user()->avatar ? asset('storage/' . auth()->user()->avatar) : 'https://ui-avatars.com/api/?name='.urlencode(auth()->user()->nombre).'&background=000&color=fff' }}"
-                                 id="avatarPreview"
-                                 alt="Avatar" class="h-full w-full rounded-full object-cover transition-transform group-hover:scale-110">
+                    <h2 class="mb-4 border-b border-white/5 pb-3.5 text-[15px] font-semibold adaptive-title">
+                        Tus datos
+                    </h2>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label for="nombre" class="mb-1.5 block text-[12px] font-medium text-gray-400">Tu nombre</label>
+                            <input type="text" id="nombre" name="nombre" value="{{ old('nombre', auth()->user()->nombre) }}" required
+                                   autocomplete="name"
+                                   class="campo w-full rounded-control border bg-black/50 px-4 py-2.5 text-[14px] text-white">
                         </div>
 
-                        <input type="file" name="avatar" id="avatarInput" class="hidden" accept="image/*" onchange="document.getElementById('avatarForm').submit()">
-
-                        <button type="button" onclick="document.getElementById('avatarInput').click()"
-                                class="absolute bottom-0 right-0 bg-accent text-white p-2 rounded-full text-xs hover:scale-110 transition-all shadow-[0_0_15px_var(--neon-accent)]">
-                            <i class="fa-solid fa-camera"></i>
-                        </button>
+                        <div>
+                            {{-- El rótulo decía «Correo Encriptado» y no lo está: es el
+                                 correo tal cual, que además se usa para entrar. --}}
+                            <label for="correo" class="mb-1.5 block text-[12px] font-medium text-gray-400">Correo electrónico</label>
+                            <input type="email" id="correo" name="correo" value="{{ old('correo', auth()->user()->correo) }}" required
+                                   autocomplete="email"
+                                   class="campo w-full rounded-control border bg-black/50 px-4 py-2.5 text-[14px] text-white">
+                        </div>
                     </div>
+
+                    <x-boton class="mt-5" icono="check">
+                        Guardar cambios
+                    </x-boton>
                 </form>
-
-                <h2 class="mt-4 text-white font-bold tracking-tight">{{ auth()->user()->nombre }}</h2>
-                <p class="text-[9px] text-accent uppercase font-black tracking-[0.2em] mt-1">{{ auth()->user()->rol }}</p>
             </div>
+        </x-modulo>
 
-            {{-- SELECCIÓN DE TEMA --}}
-            <div class="bg-black/40 border border-white/10 backdrop-blur-xl p-6 rounded-2xl">
-                <h3 class="text-white text-[10px] font-black uppercase mb-4 tracking-widest flex items-center gap-2">
-                    <i class="fa-solid fa-palette text-accent"></i> Atmósfera de Sistema
-                </h3>
+        {{-- ── APARIENCIA ─────────────────────────────────────────────── --}}
+        <x-modulo id="apariencia">
+            <section class="surface rounded-panel p-5">
+                <h2 class="mb-1 flex items-center gap-2 text-[15px] font-semibold adaptive-title">
+                    <i class="fa-solid fa-palette text-[12px] text-accent-text" aria-hidden="true"></i>
+                    Color de la aplicación
+                </h2>
+                <p class="mb-4 text-[12px] leading-relaxed text-gray-500">
+                    Elige con qué color se destacan los botones y los enlaces.
+                </p>
+
+                {{-- Cada opción muestra su propio color como muestra, y no un
+                     nombre inventado: «Rosa» no dice qué se va a ver. El nombre va
+                     en el color, que además es lo que se compara.
+
+                     `.selector` trae el aspecto y el estado marcado; aquí no hay
+                     ninguna clase de estado escrita a mano. --}}
                 <form action="{{ route('perfil.update') }}" method="POST">
                     @csrf
                     @method('PATCH')
-                    <div class="grid grid-cols-2 gap-3">
-                        @foreach(['blue' => 'Cyber Blue', 'rose' => 'Neon Rose', 'amber' => 'Amber Alert', 'purple' => 'Void Purple'] as $val => $label)
-                            <button name="tema" value="{{ $val }}"
-                                    class="h-10 rounded-lg border {{ auth()->user()->tema == $val ? 'border-accent bg-accent/20 text-white shadow-[0_0_10px_var(--neon-accent)]' : 'border-white/10 text-gray-500 hover:border-white/30' }} text-[9px] font-bold uppercase transition-all">
-                                {{ $label }}
+
+                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        @foreach (['blue' => 'Azul', 'rose' => 'Rosa', 'amber' => 'Ámbar', 'purple' => 'Morado'] as $valor => $nombre)
+                            <button name="tema" value="{{ $valor }}"
+                                    class="selector"
+                                    aria-pressed="{{ auth()->user()->tema === $valor ? 'true' : 'false' }}">
+                                {{ $nombre }}
                             </button>
                         @endforeach
                     </div>
                 </form>
-            </div>
 
-            {{-- [NUEVO] SELECCIÓN DE LUMINOSIDAD (MODO CLARO / OSCURO) --}}
-            <div class="bg-black/40 border border-white/10 backdrop-blur-xl p-6 rounded-2xl">
-                <h3 class="text-white text-[10px] font-black uppercase mb-4 tracking-widest flex items-center gap-2">
-                    <i class="fa-solid fa-circle-half-stroke text-accent"></i> Luminosidad del Núcleo
-                </h3>
-                <div class="grid grid-cols-2 gap-3">
-                    <button type="button" onclick="setThemeMode('dark')" id="btn-theme-dark"
-                            class="h-10 rounded-lg border text-[9px] font-bold uppercase transition-all">
-                        <i class="fa-solid fa-moon mr-1"></i> Modo Oscuro
+                <div class="mt-8 mb-1 flex items-center gap-2 border-t border-white/5 pt-6 text-[15px] font-semibold adaptive-title">
+                    <i class="fa-solid fa-circle-half-stroke text-[12px] text-accent-text" aria-hidden="true"></i>
+                    Modo claro u oscuro
+                </div>
+                <p class="mb-4 text-[12px] leading-relaxed text-gray-500">
+                    El modo claro se aplica al instante y se recuerda la próxima vez.
+                </p>
+
+                {{-- `aria-pressed` en vez de reescribir `className` desde JavaScript.
+
+                     Antes `updateButtonStyles()` sustituía la clase entera de los
+                     dos botones al cambiar de modo. Eso duplicaba en JavaScript las
+                     clases que ya están en el CSS: cualquier retoque visual en las
+                     hojas de estilo se perdía en cuanto se pulsaba un botón, y el
+                     estado activo solo se distinguía por un color. --}}
+                <div class="grid grid-cols-2 gap-2 sm:max-w-sm">
+                    <button type="button" data-modo="dark" class="selector" aria-pressed="false">
+                        <i class="fa-solid fa-moon text-[10px]" aria-hidden="true"></i>
+                        Oscuro
                     </button>
-                    <button type="button" onclick="setThemeMode('light')" id="btn-theme-light"
-                            class="h-10 rounded-lg border text-[9px] font-bold uppercase transition-all">
-                        <i class="fa-solid fa-sun mr-1"></i> Modo Claro
+
+                    <button type="button" data-modo="light" class="selector" aria-pressed="false">
+                        <i class="fa-solid fa-sun text-[10px]" aria-hidden="true"></i>
+                        Claro
                     </button>
                 </div>
-            </div>
-        </div>
+            </section>
+        </x-modulo>
 
-        {{-- COLUMNA DERECHA: CREDENCIALES Y FEEDBACK --}}
-        <div class="lg:col-span-2 space-y-6">
-
-            {{-- FORMULARIO DE DATOS --}}
-            <form action="{{ route('perfil.update') }}" method="POST" class="bg-black/40 border border-white/10 backdrop-blur-xl p-8 rounded-2xl relative">
-                @csrf
-                @method('PATCH')
-
-                <h3 class="text-white text-[10px] font-black uppercase mb-6 tracking-widest border-b border-white/5 pb-4">Sincronizar Identidad</h3>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-2">
-                        <label class="text-[9px] text-gray-500 uppercase font-black ml-1">Nombre de Operador</label>
-                        <input type="text" name="nombre" value="{{ auth()->user()->nombre }}" required
-                               class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-accent focus:ring-0 transition-all outline-none">
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-[9px] text-gray-500 uppercase font-black ml-1">Correo Encriptado</label>
-                        <input type="email" name="correo" value="{{ auth()->user()->correo }}" required
-                               class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-accent focus:ring-0 transition-all outline-none">
-                    </div>
-                </div>
-
-                <button type="submit" class="mt-8 bg-accent text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:shadow-[0_0_20px_var(--neon-accent)] hover:scale-[1.02] transition-all">
-                    Guardar Cambios en Base de Datos
-                </button>
-            </form>
-
-            {{-- PROTOCOLO DE MEJORA --}}
-            <div class="bg-accent/5 border border-accent/20 p-8 rounded-2xl">
-                <h3 class="text-accent text-[10px] font-black uppercase mb-2 tracking-widest flex items-center gap-2">
-                    <i class="fa-solid fa-comment-medical"></i> Protocolo de Mejora
-                </h3>
-                <p class="text-gray-400 text-[9px] mb-6 uppercase tracking-wider">¿Alguna anomalía o sugerencia técnica para la Terminal?</p>
+        {{-- ── COMENTARIOS ──────────────────────────────────────────────
+             El bloque dice lo mismo que la pantalla que los recoge: es el camino
+             de vuelta desde «envié algo» hasta «alguien lo va a leer». --}}
+        <x-modulo id="comentarios">
+            <div class="rounded-panel border border-accent/25 bg-accent-soft p-5">
+                <h2 class="mb-1 flex items-center gap-2 text-[15px] font-semibold text-accent-text">
+                    <i class="fa-solid fa-comment-dots text-[12px]" aria-hidden="true"></i>
+                    Enviar un comentario
+                </h2>
+                <p class="mb-4 text-[12px] leading-relaxed text-gray-400">
+                    ¿Algo no funciona, o te falta alguna opción? Cuéntalo y lo revisamos.
+                </p>
 
                 <form action="{{ route('perfil.feedback') }}" method="POST">
                     @csrf
-                    <textarea name="mensaje" required placeholder="Escriba aquí su reporte (mínimo 3 caracteres)..." rows="3"
-                              class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-accent focus:ring-0 transition-all outline-none placeholder:text-gray-700">{{ old('mensaje') }}</textarea>
+                    <label for="mensaje" class="sr-only">Tu comentario</label>
+                    <textarea id="mensaje" name="mensaje" required rows="4"
+                              placeholder="Escribe aquí tu comentario (mínimo 3 caracteres)…"
+                              class="campo w-full rounded-control border bg-black/40 px-4 py-3 text-[14px] leading-relaxed text-white">{{ old('mensaje') }}</textarea>
 
-                    <button type="submit" class="mt-4 border border-accent text-accent px-6 py-2 rounded-lg text-[9px] font-black uppercase hover:bg-accent hover:text-white transition-all shadow-[0_0_10px_rgba(var(--neon-accent),0.1)]">
-                        Transmitir Feedback
-                    </button>
+                    <x-boton-secundario class="mt-3" icono="paper-plane">
+                        Enviar comentario
+                    </x-boton-secundario>
                 </form>
             </div>
-        </div>
-    </div>
+        </x-modulo>
+    </x-modulos>
 </div>
 @endsection
 
-{{-- [NUEVO] SCRIPT DE INTERACCIÓN LOGICAL PARA LUMINOSIDAD --}}
 @push('scripts')
 <script>
-    function setThemeMode(mode) {
-        if (mode === 'light') {
-            document.documentElement.classList.add('light-mode');
-            localStorage.setItem('theme', 'light');
-        } else {
-            document.documentElement.classList.remove('light-mode');
-            localStorage.setItem('theme', 'dark');
-        }
-        updateButtonStyles();
-    }
+    /* Modo claro u oscuro.
 
-    function updateButtonStyles() {
-        const isLight = document.documentElement.classList.contains('light-mode');
-        const btnLight = document.getElementById('btn-theme-light');
-        const btnDark = document.getElementById('btn-theme-dark');
+       El estado vive en `aria-pressed` de cada botón y el aspecto sale del
+       CSS con `.selector[aria-pressed='true']`. Aquí solo se hace una cosa: poner
+       el atributo en su sitio. Reemplazar `className` desde aquí obligaría a
+       mantener dos copias de las mismas clases. */
+    (function () {
+        const aplicarModo = (modo) => {
+            const claro = modo === 'light';
 
-        if (!btnLight || !btnDark) return;
+            document.documentElement.classList.toggle('light-mode', claro);
+            localStorage.setItem('theme', claro ? 'light' : 'dark');
 
-        if (isLight) {
-            btnLight.className = "h-10 rounded-lg border border-accent bg-accent/20 text-white text-[9px] font-bold uppercase transition-all shadow-[0_0_10px_var(--neon-accent)]";
-            btnDark.className = "h-10 rounded-lg border border-white/10 text-gray-500 hover:border-white/30 text-[9px] font-bold uppercase transition-all";
-        } else {
-            btnDark.className = "h-10 rounded-lg border border-accent bg-accent/20 text-white text-[9px] font-bold uppercase transition-all shadow-[0_0_10px_var(--neon-accent)]";
-            btnLight.className = "h-10 rounded-lg border border-white/10 text-gray-500 hover:border-white/30 text-[9px] font-bold uppercase transition-all";
-        }
-    }
+            document.querySelectorAll('[data-modo]').forEach((boton) => {
+                boton.setAttribute('aria-pressed', String(boton.dataset.modo === modo));
+            });
+        };
 
-    // Inicializar estados visuales de botones al cargar el DOM
-    document.addEventListener('DOMContentLoaded', updateButtonStyles);
+        document.addEventListener('DOMContentLoaded', function () {
+            // El `<head>` ya aplicó el modo guardado antes de pintar, así que
+            // los botones arrancan sincronizados con lo que se está viendo.
+            const actual = document.documentElement.classList.contains('light-mode') ? 'light' : 'dark';
+
+            document.querySelectorAll('[data-modo]').forEach((boton) => {
+                boton.setAttribute('aria-pressed', String(boton.dataset.modo === actual));
+                boton.addEventListener('click', () => aplicarModo(boton.dataset.modo));
+            });
+        });
+    })();
 </script>
 @endpush

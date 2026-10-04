@@ -1,12 +1,85 @@
-/* 1. Importación maestra de Tailwind v4 */
+/* ═══════════════════════════════════════════════════════════════════════════
+   S-EMOTION · SISTEMA DE DISEÑO
+   ═══════════════════════════════════════════════════════════════════════════
+   Este archivo es la ÚNICA fuente de verdad de los tokens visuales.
+
+   Antes vivían dentro de un <style> en `layouts/app.blade.php`, lo que dejaba
+   sin definición a todas las pantallas que no usan ese layout: la portada, el
+   login, el registro y la política de privacidad. `font-orbitron` y
+   `bg-accent-soft` estaban escritas ahí y no existían en ninguna parte para
+   ellas: la política de privacidad se veía con la tipografía por defecto del
+   navegador.
+
+   Para cambiar el aspecto de TODO el programa, se edita este archivo.
+
+   ORDEN DE LAS SECCIONES
+     1. Importación de Tailwind
+     2. Tokens estáticos (@theme)
+     3. Tokens de ejecución (:root) — los que cambia el usuario
+     4. Inversión a modo claro
+     5. Base tipográfica
+     6. Utilidades de interfaz
+     7. Capas del panel (línea de escaneo, barra lateral)
+     8. Accesibilidad: movimiento reducido
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 @import "tailwindcss";
 
-/* 2. Definición del Tema Creativo (Ecosistema S-Emotion) */
+/* ───────────────────────────────────────────────────────────────────────────
+   2. TOKENS ESTÁTICOS
+   Compilan a utilidades de Tailwind: bg-neon-cyan, text-neon-rose, etc.
+   ─────────────────────────────────────────────────────────────────────────── */
 @theme {
   --color-start-dark: #020617;
-  --color-neon-cyan: #22D3EE;
-  --color-neon-purple: #A855F7;
-  --color-neon-rose: #FB7185;
+
+  /* Solo la rosa es un color DE SISTEMA: es el acento de error, y como tal lo
+     usan el botón de borrar y las chapas de dato. El cian y el morado NO están
+     aquí porque el color de marca lo elige cada persona y llega por
+     `--neon-accent` desde `layouts/app.blade.php`; declararlos aquí además no
+     los usaba nadie y hacía pensar que el morado era un color de la aplicación.
+
+     El acierto y el aviso de las emociones tienen sus propios tonos y viven en el
+     mapa de `historial.blade.php`, porque ahí el color ES el dato, no la
+     decoración. */
+  --color-neon-rose: #f43f5e;
+
+  /* ── Tokens de acento ───────────────────────────────────────────────────
+     El acento se declara AQUÍ y no como clases CSS escritas a mano. La
+     diferencia es práctica: una clase escrita a mano no admite el modificador
+     de opacidad, así que `border-accent/30` no generaba nada y el filete
+     salía del color por defecto del navegador. Declarándolo como color del
+     tema, Tailwind genera la familia entera —`bg-accent/20`, `from-accent`,
+     `ring-accent/40`— con opacidad incluida.
+
+     Hay tres tokens y no uno porque cumplen tres papeles distintos:
+
+       accent        → rellenos, filetes, resplandores y degradados. El color
+                       puro, porque aquí interesa que se vea el brillo.
+       accent-text   → color usado COMO TEXTO. En modo claro se oscurece, porque
+                       el cian del modo oscuro sobre blanco da 1.8:1.
+       accent-ink    → tinta que va ENCIMA de un relleno de acento. Oscura en
+                       modo oscuro, clara en modo claro.
+
+     Dos reglas que conviene no romper al tocar esto:
+
+     1. Aquí los valores son LITERALES, no `var(--neon-accent)`. Tailwind
+        necesita leer el color en tiempo de compilación para saber qué clases
+        existen; con una variable no puede resolverlo y no genera ninguna
+        utilidad — ni `bg-accent`, ni `border-accent/30`, ni nada. Con
+        literales genera la familia entera, opacidad incluida.
+
+     2. El valor real lo pone la sección 3, que sobrescribe estos tokens en
+        `:root` con la variable de ejecución. Las utilidades ya generadas
+        apuntan a `var(--color-accent)`, así que el cambio de tema las alcanza
+        igual. Literal en `@theme`, variable en `:root`: esa es la división. */
+  --color-accent: #22d3ee;
+  --color-accent-text: #22d3ee;
+  --color-accent-ink: #05070d;
+  --color-accent-soft: rgba(34, 211, 238, 0.1);
+
+  /* Resplandor de acento. Va en `@theme` por el mismo motivo que los colores:
+     así `shadow-accent-glow/50` admite opacidad. */
+  --shadow-accent-glow: 0 0 15px rgba(34, 211, 238, 0.3);
 
   --animate-glow-pulse: glow 2s infinite alternate;
   --animate-float: float 3s ease-in-out infinite;
@@ -22,110 +95,1097 @@
   }
 }
 
-/* 3. Estilos Base Globales */
-body {
-  @apply bg-start-dark text-white antialiased;
-  margin: 0;
-  padding: 0;
+/* ───────────────────────────────────────────────────────────────────────────
+   3. TOKENS DE EJECUCIÓN
+
+   `--neon-accent` y `--neon-accent-rgb` los sobrescribe `layouts/app.blade.php`
+   con el color que eligió cada persona. Aquí va el valor por defecto para que
+   las pantallas públicas (portada, acceso, política) tengan acento sin tener
+   que duplicar la lógica de temas.
+
+   `--accent-ink` es la corrección de contraste. Los cuatro acentos disponibles
+   son todos claros, así que el texto que va ENCIMA de un relleno de acento
+   tiene que ser oscuro: blanco sobre cian da 1.8:1 y la norma pide 4.5:1. Con
+   un token para el color de tinta, ningún botón vuelve ameter el error.
+   ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  --neon-accent: #22d3ee;
+  --neon-accent-rgb: 34, 211, 238;
+
+  /* Tinta sobre relleno de acento. No es negro puro: el negro puro aplana. */
+  --accent-ink: #05070d;
+  --accent-ink-contrast: #ffffff;
+
+  /* Versión del acento PENSA PARA LEERSE COMO TEXTO. En oscuro es el propio
+     acento; en claro se oscurece mezclándolo con el tinta del fondo, porque
+     cian sobre blanco da 1.8:1. `color-mix` lo resuelve para los cuatro
+     acentos a la vez, sin mantener una tabla de colores a mano. */
+  --accent-readable: var(--neon-accent);
+
+  /* Puente hacia Tailwind. Estos tres tokens son la única forma de que las
+     clases `bg-accent`, `border-accent/30` y `text-accent-text` se generen de
+     verdad, con su modificador de opacidad incluido. Al apuntar a las
+     variables de ejecución, el cambio de tema llega a todas ellas sin tocar
+     este bloque. */
+  --color-accent: var(--neon-accent);
+  --color-accent-text: var(--accent-readable);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: rgba(var(--neon-accent-rgb), 0.1);
+  --shadow-accent-glow: 0 0 15px rgba(var(--neon-accent-rgb), 0.3);
+
+  /* Superficies */
+  --bg-primary: #030712;
+  --bg-sidebar: rgba(0, 0, 0, 0.6);
+  --bg-raised: rgba(255, 255, 255, 0.04);
+  --border-system: rgba(255, 255, 255, 0.1);
+
+  /* Texto */
+  --text-primary: #ffffff;
+  --text-muted: #94a3b8;
+  /* Tercer escalón de la jerarquía. `#64748b` daba 4.19:1 sobre el fondo de la
+     aplicación, por debajo del mínimo; `#8b98ab` mantiene el escalón por debajo
+     de `--text-muted` y por encima de 4.5. */
+  --text-subtle: #8b98ab;
+
+  --scanline-opacity: 0.02;
 }
 
-/* 4. Protocolo de Modo Claro (Inversión Global de Interfaz) */
+/* ───────────────────────────────────────────────────────────────────────────
+   4. MODO CLURO
+
+   Se invierten los tokens, no las clases. Antes el modo claro era un bloque de
+   selectores con `!important` que había que adivinar qué overriding; ahora basta
+   con que cada elemento lea su color de una variable.
+
+   Estos tokens viven en un bloque `html.light-mode` de nivel superior, no
+   anidados dentro de un `:root`. Es la misma especificidad en apariencia, pero
+   el orden importa: `:root` está declarado en la sección 3 y esta regla llega
+   después en la hoja, así que gana por cascada sin recurrir a `!important`.
+
+   Ojo con `:root:has(html.light-mode)`, que parece más específica y no funciona:
+   un elemento no es descendiente de sí mismo, así que la combinación nunca
+   coincide. `:root` YA es `html`, de modo que `html.light-mode` es el selector
+   correcto y suficiente.
+   ─────────────────────────────────────────────────────────────────────────── */
 html.light-mode {
+  --bg-primary: #f1f5f9;
+  --bg-sidebar: rgba(255, 255, 255, 0.85);
+  --bg-raised: rgba(15, 23, 42, 0.03);
+  --border-system: rgba(15, 23, 42, 0.1);
 
-  /* Transmutación de tarjetas oscuras a paneles claros aero-elegantes */
-  .bg-black\/40, .bg-white\/5 {
-    background-color: rgba(255, 255, 255, 0.85) !important;
-    border-color: rgba(15, 23, 42, 0.08) !important;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+  --text-primary: #0f172a;
+  --text-muted: #475569;
+  /* `#64748b` sobre `#f1f5f9` da 4.39:1, justo por debajo del mínimo. */
+  --text-subtle: #5b6a80;
+
+  /* La tinta sobre relleno de acento NO se invierte en modo claro.
+
+     Es tentador ponerla blanca porque el resto de la interfaz se aclara, pero
+     los cuatro acentos disponibles son todos claros: sobre un cian claro, el
+     blanco da 1.8:1. Aquí el relleno sigue siendo `#22d3ee`, así que la tinta
+     tiene que seguir siendo oscura. Lo que se aclara es el fondo de la página,
+     no el color del botón.
+
+     Consecuencia: los botones de acento en modo claro son bloques de color
+     claro con texto casi negro. Se leen bien y además funcionan como el único
+     elemento saturado de la pantalla, que es justo lo que un botón principal
+     debe ser. */
+
+  /* El cian neón no se puede leer como texto sobre blanco. Este lo oscurece un
+     60% hacia el tinta del fondo, lo que deja el mismo tono pero con contraste
+     suficiente tanto para el cian como para el morado, la rosa y el ámbar. */
+  --accent-readable: color-mix(in oklab, var(--neon-accent), #0f172a 60%);
+
+  --scanline-opacity: 0.005;
+}
+
+/* ── Superficies ─────────────────────────────────────────────────────────
+     Un `rgba(255,255,255,.04)` no es «lo mismo pero claro»: al invertirlo hay
+     que decidir explícitamente qué superficie resulta, y la respuesta no es la
+     misma para todas. Una tarjeta tiene que quedar MÁS clara que la página;
+     una franja de herramientas, algo menos; un hueco hundido, más oscuro.
+
+     Estas reglas son necesarias porque Tailwind compila `bg-black/40` a un
+     literal —`#0006`— y no a `var(--color-black)`. No hay variable que
+     redefinir: la opacidad va incrustada en el color. Por eso aquí sí hacen
+     falta selectores de clase.
+
+     La lista es explícita a propósito. Antes solo cubría `/40` y `/50`, y las
+     barras de `bg-black/30` se quedaban oscuras en modo claro: el texto
+     secundario encima daba 4.3:1 y las barras de frankly 2:1. Si mañana se
+     añade una opacidad nueva hay que añadirla aquí; para eso está el
+     comentario. */
+
+  /* Hueco hundido y zonas de «aquí no hay nada»: apenas un velo sobre la página. */
+  html.light-mode .bg-black\/20 {
+    background-color: rgba(15, 23, 42, 0.04) !important;
   }
 
-  /* Re-ajuste de inputs de formularios convencionales */
-  .bg-black\/50 {
+  /* Franja de herramientas y barras de selección: algo por encima de la página. */
+  html.light-mode .bg-black\/30 {
+    background-color: rgba(255, 255, 255, 0.72) !important;
+  }
+
+  /* Tarjetas, tablas y paneles: claramente por encima de la página. */
+  html.light-mode .bg-black\/40,
+  html.light-mode .bg-white\/5,
+  html.light-mode .bg-white\/10 {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08) !important;
+  }
+
+  /* Campos de formulario: blanco puro, para que se lean como un campo. */
+  html.light-mode .bg-black\/50,
+  html.light-mode input:not([type="range"]),
+  html.light-mode select,
+  html.light-mode textarea {
     background-color: #ffffff !important;
-    border-color: rgba(15, 23, 42, 0.12) !important;
     color: #0f172a !important;
   }
 
-  /* Sincronización de bordes opacos */
-  .border-white\/10, .border-white\/5 {
-    border-color: rgba(15, 23, 42, 0.1) !important;
+  /* Fila desplegada: en modo oscuro es un negro más profundo que la tabla; en
+     claro, un gris apenas perceptible. */
+  html.light-mode .bg-black\/60 {
+    background-color: rgba(15, 23, 42, 0.05) !important;
   }
 
-  /* Inversión de jerarquías de texto de Tailwind */
-  .text-white, .text-gray-300 {
-    color: #0f172a !important;
+  html.light-mode input::placeholder,
+  html.light-mode textarea::placeholder { color: #64748b !important; }
+
+  /* ── Filetes ────────────────────────────────────────────────────────────
+     Igual que las superficies, `border-white/10` compila a `#ffffff1a` y no
+     admite variable. Se cubre cada opacidad que la aplicación usa, y aquí NO
+     se fuerza el color de los filetes desde las reglas de superficie: si se
+     hiciera, un `border-accent/30` sobre una tarjeta se perdería en modo
+     claro por el `!important`. */
+  html.light-mode .border-white\/5 { border-color: rgba(15, 23, 42, 0.08) !important; }
+  html.light-mode .border-white\/10 { border-color: rgba(15, 23, 42, 0.12) !important; }
+  html.light-mode .border-white\/15 { border-color: rgba(15, 23, 42, 0.16) !important; }
+  html.light-mode .border-white\/20 { border-color: rgba(15, 23, 42, 0.2) !important; }
+  html.light-mode .border-white\/25 { border-color: rgba(15, 23, 42, 0.24) !important; }
+  html.light-mode .border-white\/30 { border-color: rgba(15, 23, 42, 0.28) !important; }
+  html.light-mode .border-white\/40 { border-color: rgba(15, 23, 42, 0.36) !important; }
+
+  /* ── Texto: se remapean las VARIABLES, no las clases ────────────────────────
+
+   Antes esto era un bloque de selectores con `!important`:
+   `html.light-mode .text-gray-400 { … !important }`. Funcionaba… salvo para
+   las variantes. Una variante como `aria-[pressed=false]:text-gray-400` NO
+   lleva la clase `text-gray-400` en el elemento: lleva
+   `aria-[pressed=false]:text-gray-400`, y el selector
+   `html.light-mode .text-gray-400` nunca la encuentra. Con los botones de
+   tema y de modo que acababan de reescribirse, el gris del modo oscuro se
+   colaba en modo claro y quedaba en 2.2:1.
+
+   La razón de fondo es que la paleta de Tailwind se compila a utilidades que
+   leen la variable: `.text-gray-400 { color: var(--color-gray-400) }`. Si se
+   cambia `--color-gray-400`, se corrigen a la vez la clase suelta, la variante,
+   el `hover:` y cualquier cosa que se escriba mañana. Un solo punto de entrada
+   en vez de una lista de clases que hay que recordar actualizar. */
+
+/* Modo oscuro.
+
+   Tailwind pone `--color-gray-500` en `#6b7280`, que sobre el fondo de esta
+   aplicación da 4.0-4.3:1. Es el color de las cabeceras de tabla, las fechas y
+   los subtítulos: exactamente las etiquetas que primero se dejan de mirar y
+   luego no se leen. Se sube un escalón a `#94a3b8`. */
+:root {
+  --color-gray-500: #94a3b8;
+  --color-gray-600: #94a3b8;
+}
+
+html.light-mode {
+  --color-white: #0f172a;
+  --color-gray-100: #1e293b;
+  --color-gray-200: #1e293b;
+  --color-gray-300: #1e293b;
+  --color-gray-400: #334155;
+  --color-gray-500: #475569;
+  --color-gray-600: #475569;
+  --color-gray-700: #334155;
+
+  /* ── Paleta semántica ───────────────────────────────────────────────────
+     Rosa, ámbar, esmeralda, cian, azul y morado son los colores con los que se
+     pintan los estados: error, aviso, acierto y las chapas de emoción. Sus
+     tonos de Tailwind están elegidos para fondo oscuro, y sobre blanco bajan
+     de 4.5:1 — la rosa a 2.6, el cian a 1.8.
+
+     El tono se mantiene: la familia es la misma, solo se oscurece hasta que se
+     lee. Es importante porque en `historial` y en el calendario el color ES el
+     dato, y una app que cambia de color al cambiar de tema estaría cambiando
+     la información junto con el decorado.
+
+     El escalón al que baja cada tono depende de DÓNDE se usa, y esa distinción
+     es la que faltaba. Hay dos usos, y no admiten el mismo color:
+
+       · el paso 400 es texto sobre superficie neutra → con el paso 600 o 700
+         ya supera el mínimo;
+
+       · los pasos 300 y 200 son TINTA sobre una superficie teñida del mismo
+         tono: el número de una celda del calendario, la etiqueta de una chapa.
+         Un tinte al 15 % o al 30 % sobre blanco es siempre un fondo claro, así
+         que ahí la tinta tiene que dar el salto hasta el paso 800. Con el 600
+         se quedaba en 4.16:1 — el caso de las chapas de la validación
+         científica, que es justo el sitio donde más cuesta leerlas.
+
+     Antes `text-blue-200` y `text-purple-200` ni siquiera estaban remapeados:
+     sobre blanco, `#bfdbfe` y `#ddd6fe` son invisibles. Y como el estado
+     marcado del selector de emociones solo existe después de pulsar, ni el
+     barrido de contraste lo veía: hay que revisar también los estados que no
+     se están mostrando. */
+  --color-rose-400: #9f1239;
+  --color-rose-300: #881337;
+  --color-rose-200: #881337;
+  --color-amber-400: #92400e;
+  --color-amber-300: #78350f;
+  --color-amber-200: #78350f;
+  --color-emerald-400: #047857;
+  --color-emerald-300: #065f46;
+  --color-emerald-200: #065f46;
+  --color-cyan-300: #0e7490;
+  --color-blue-400: #1d4ed8;
+  --color-blue-200: #1e40af;
+  --color-purple-400: #6d28d9;
+  --color-purple-200: #5b21b6;
+
+  /* `--color-neon-rose` es una constante de marca (el acento de error), no un
+     color que siga el tema, pero se usa como texto en varias chapas de datos y
+     en los botones de borrar. Sobre blanco, `#f43f5e` da 3.3:1. */
+  --color-neon-rose: #be123c;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   5. BASE TIPOGRÁFICA
+
+   Rajdhani es la fuente de cuerpo en toda la aplicación. Antes sólo la cargaba
+   `layouts/app`, y el layout de acceso forzaba Orbitron sobre el body, de modo
+   que el login y el registro se leían con una tipografía de display: se veían
+   como una pantalla distinta y no como la misma aplicación.
+
+   Orbitron queda reservada para titulares, cifras grandes y códigos de sección.
+   Jamás para texto corrido ni para etiquetas que haya que leer.
+   ─────────────────────────────────────────────────────────────────────────── */
+body {
+  @apply bg-start-dark antialiased;
+  margin: 0;
+  padding: 0;
+
+  font-family: 'Rajdhani', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* NO hay transición de fondo ni de color en el body.
+
+   Se cambió a propósito. Al alternar el tema, una transición de 0.4s hace que el
+   fondo panee de claro a oscuro durante casi medio segundo: da la impresión de
+   que la pantalla está rota, y en una herramienta clínica ese momento de
+   inestabilidad es cuando alguien podría pensar que ha perdido sus datos.
+
+   El cambio de tema es un acto deliberado de quien lo pulsa, así que debe ser
+   inmediato. Las superficies que sí conservan su transición (tarjetas, filetes)
+   cambian con `--movimiento-duracion`, que está por debajo de este valor: el
+   movimiento de una tarjeta nunca debe notarse tanto como el cambio de tema. */
+
+/* Display / cifras. El nombre histórico se conserva porque aparece en 110
+   lugares del código; lo que cambia es que ahora significa algo concreto. */
+.font-orbitron {
+  font-family: 'Orbitron', system-ui, sans-serif;
+}
+
+/* Cifras de datos. Tabular evita que un número "salte" al actualizarse. */
+.font-mono,
+.font-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Vuelve a la tipografía de cuerpo. Se usa junto a `.dato` para las unidades de
+   una cifra —el «ms» de una latencia, el «/100» de un índice—: son parte de la
+   medida de la frase, no una cifra propia, y con la tipografía de display una
+   unidad de dos letras compite visualmente con el número que acompaña. */
+.font-body {
+  font-family: 'Rajdhani', system-ui, sans-serif;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   6. UTILIDADES DE INTERFAZ
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Jerarquía de texto */
+.adaptive-title { color: var(--text-primary) !important; }
+.adaptive-text { color: var(--text-muted) !important; }
+.adaptive-subtle { color: var(--text-subtle) !important; }
+
+/* `bg-accent`, `border-accent/30`, `text-accent-text`, `shadow-accent-glow` y el
+   resto de la familia los genera Tailwind a partir de los tokens `--color-*` de
+   más arriba. Aquí no se redefinen: escribirlos a mano era exactamente lo que
+   impedía que el modificador de opacidad funcionara.
+
+   Por eso el color usado COMO TEXTO es `text-accent-text` y no `text-accent`.
+   Los dos existen. Se distinguen por para qué sirven:
+
+     text-accent       → el acento puro. Sobre fondo oscuro.
+     text-accent-text  → la versión «legible», que en modo claro se oscurece.
+
+   En modo oscuro coinciden. La diferencia solo aparece al elegir modo claro,
+   y es justo donde importa. */
+
+/* Superficies que deben funcionar en los dos modos */
+.surface {
+  background-color: var(--bg-raised);
+  border: 1px solid var(--border-system);
+}
+
+/* ── Estado de un indicador, controlado desde JavaScript ────────────────────
+   `minijuegos/diagnostico` cambia el aspecto de varias cifras según por dónde
+   va la partida. Antes lo hacía asignando `className` entero desde el guion,
+   con la lista de clases repetida en cada punto del código: había ocho copias
+   de las mismas clases de Tailwind, y cualquier retoque en las hojas de estilo
+   se perdía en cuanto alguien jugaba una partida.
+
+   Ahora el guion mueve un atributo —`data-nivel` o `data-estado`— y el aspecto
+   sale de aquí. Es además la forma correcta de anunciarlo: `aria-live` merece
+   que el cambio sea un cambio de estado y no un reemplazo de nodo. */
+.dato-estado {
+  font-family: 'Orbitron', system-ui, sans-serif;
+  font-size: 1.125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.dato-estado[data-nivel='estable']   { color: var(--color-accent-text); }
+.dato-estado[data-nivel='aviso']     { color: var(--color-amber-400); }
+.dato-estado[data-nivel='critico']   { color: var(--color-rose-400); animation: latido 1.6s ease-in-out infinite; }
+.dato-estado[data-nivel='resuelto']  { color: var(--color-emerald-400); }
+.dato-estado[data-nivel='agotado']   { color: var(--color-rose-300); }
+
+/* El latido, y hasta dónde baja.
+ *
+ * El valle está en 0.8 y no en 0.55 porque esta opacidad es también el contraste
+ * del texto: al 0.55, la palabra rose-400 sobre la superficie se quedaba en 2.73
+ * (oscuro) y 2.91 (claro), por debajo de 3.0, que es el umbral que la WCAG da
+ * siquiera para texto grande. O sea que el aviso se apagaba justo cuando mimetiza
+ * que algo va mal, y quien menos lo distingue es quien ha activado «reducir
+ * movimiento», que lo apaga entero.
+ *
+ * Al 0.8 el efecto se sigue viendo y el valle queda por encima de 3.0. Lo miden
+ * `HojaDeEstiloTest::test_el_latido_no_apaga_el_texto_que_avisa`.
+ */
+@keyframes latido {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.8; }
+}
+
+/* Aviso del juego: una sola línea de propósito, con el aspecto según lo que
+   haya pasado. */
+.aviso-estado {
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-system);
+  background-color: var(--bg-raised);
+  padding: 0.75rem 1rem;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+.aviso-estado[data-estado='fallo'] {
+  border-color: var(--color-neon-rose);
+  background-color: rgba(244, 63, 94, 0.08);
+  color: var(--color-rose-300);
+}
+.aviso-estado[data-estado='acierto'] {
+  border-color: var(--color-emerald-500);
+  background-color: rgba(16, 185, 129, 0.08);
+  color: var(--color-emerald-300);
+}
+
+/* Aviso corto de una línea, el que anuncia si la respuesta quedó guardada. */
+.linea-estado { font-size: 12px; color: var(--text-subtle); }
+.linea-estado[data-estado='guardado'] { color: var(--color-emerald-300); }
+.linea-estado[data-estado='fallo']    { color: var(--color-rose-300); }
+
+/* Escalera de radios. Dos niveles y nada más: contenedor y control.
+   Antes convivían seis valores distintos —xl, 2xl, 3xl, lg, md, full— más un
+   `rounded-[2.5rem]` suelto, y el mismo elemento lógico cambiaba de radio según
+   la pantalla. El nombre lleva `rounded-` por familiaridad, pero la escala es
+   nuestra. */
+.rounded-panel { border-radius: 1rem; }
+.rounded-control { border-radius: 0.75rem; }
+.rounded-pill { border-radius: 9999px; }
+
+/* Escala de la encuesta SISCO.
+ *
+   Vive aquí, y no en un bloque `<style>` dentro de la vista, por dos razones.
+   La primera es la de siempre: si el aspecto de un control depende de una
+   regla escrita en la plantilla, acaba teniendo dos reglas que dicen lo mismo
+   y solo una se actualiza. La segunda es que el estado marcado se pinta con
+   `--color-accent` y `--color-accent-ink`, los tokens del tema. Con
+   `background-color: var(--neon-accent); color: #000000` en línea, el texto
+   marcado era negro sobre un acento que en modo claro se oscurece: el color
+   del botón deja de ser un tema y pasa a ser una constante.
+
+   El texto va en la etiqueta del `input`, no en la del botón, para que el
+   lector de pantalla anuncie la opción completa («2 · Rara vez») y no solo un
+   número suelto. */
+.escala-likert label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.5rem;
+  width: 2.5rem;
+  font-family: 'Orbitron', system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--color-gray-300);
+  background: color-mix(in srgb, var(--color-white) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-white) 10%, transparent);
+  border-radius: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.escala-likert label:hover { border-color: color-mix(in srgb, var(--color-white) 40%, transparent); }
+
+.escala-likert input[type='radio']:checked + label {
+  color: var(--color-accent-ink);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  font-weight: 700;
+}
+
+.escala-likert input[type='radio']:focus-visible + label {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   6-bis. MOVIMIENTO E INTERACCIÓN
+
+   Todo el movimiento de la aplicación se decide aquí, y solo aquí. La razón es la
+   misma que motivó los botones: cuando el mismo efecto se escribe en quince
+   plantillas, acaba siendo quince efectos ligeramente distintos, y ninguno es el
+   que se decidió.
+
+   Hay cuatro tokens y son todos ajustables de una vez:
+
+     --movimiento-duracion   200 ms. Es lo que tardan las superficies en asentarse.
+     --movimiento-curva      salida rápida, llegada larga. Un elemento que se
+                             levanta tiene que hacerlo con decisión; uno que
+                             vuelve, sin prisa.
+     --movimiento-elevacion  cuánto sube un control al pasar el ratón. Dos
+                             píxeles: se nota sin que el botón parezca que se
+                             escapa de la fila en la que está.
+     --movimiento-escala     1.02. Lo justo para que el elemento responda.
+
+   El color de la sombra sale de `--color-accent`, no de un segundo acento. La
+   razón es que el resplandor tiene que ser el de la marca: si el botón se
+   ilumina en un color que no aparece en ninguna otra parte de la pantalla, deja
+   de iluminarse y pasa a estar mal pintado.
+   ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  --movimiento-duracion: 200ms;
+  --movimiento-curva: cubic-bezier(0.16, 1, 0.3, 1);
+  --movimiento-elevacion: 2px;
+  --movimiento-escala: 1.02;
+  --movimiento-escala-pulsada: 0.95;
+
+  /* Sombra de elevación. Dos capas: una de contacto, que es la que da peso, y
+     otra teñida con el acento, que es la que da la sensación de luz propia. En
+     modo oscuro la capa neutra es casi negra; en claro sería un desastre, así
+     que se aclara más abajo. */
+  --sombra-elevacion:
+    0 1px 2px -1px var(--sombra-neutra),
+    0 10px 24px -12px color-mix(in srgb, var(--color-accent) 30%, transparent);
+  --sombra-neutra: rgb(0 0 0 / 0.45);
+}
+
+html.light-mode {
+  /* Sobre blanco, una sombra negra al 45 % mancha el papel en vez de elevar. Y
+     además la sombra neutra ya no hace falta: el filete hace de frontera. */
+  --sombra-neutra: rgb(15 23 42 / 0.14);
+}
+
+/* Todo lo que se mueve comparte la misma transición. Declararla una vez evita
+   que cada clase tenga su propia idea de cuánto dura un efecto. */
+.btn,
+.tarjeta,
+.campo,
+.selector,
+.modulo-pestana,
+.dato-tarjeta {
+  transition:
+    background-color var(--movimiento-duracion) var(--movimiento-curva),
+    border-color var(--movimiento-duracion) var(--movimiento-curva),
+    color var(--movimiento-duracion) var(--movimiento-curva),
+    box-shadow var(--movimiento-duracion) var(--movimiento-curva),
+    transform var(--movimiento-duracion) var(--movimiento-curva),
+    filter var(--movimiento-duracion) var(--movimiento-curva);
+}
+
+/* El elevación va dentro de `@media (hover: hover)` a propósito. En un teléfono
+   o una tableta no existe el estado «encima», y sin esta protección el botón se
+   queda pegado en la posición elevada después de tocarlo: parece que la pantalla
+   ha quedado con un control descolocado. */
+@media (hover: hover) {
+  .btn:hover:not(:disabled),
+  .selector:hover,
+  .modulo-pestana:hover:not([aria-disabled='true']) {
+    transform: translateY(calc(-1 * var(--movimiento-elevacion))) scale(var(--movimiento-escala));
+    box-shadow: var(--sombra-elevacion);
   }
 
-  .text-gray-400 {
-    color: #334155 !important;
+  .tarjeta:hover {
+    transform: translateY(calc(-1 * var(--movimiento-elevacion) * 2));
+    border-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
+    box-shadow: var(--sombra-elevacion);
+  }
+}
+
+/* El rebote al pulsar va DESPUÉS del `:hover` a propósito. Las dos reglas tienen
+   la misma especificidad, así que la que se lee es la última: pulsar tiene que
+   hundir el control, no dejarlo en alto. */
+.btn:active:not(:disabled),
+.selector:active,
+.modulo-pestana:active:not([aria-disabled='true']) {
+  transform: scale(var(--movimiento-escala-pulsada));
+}
+
+/* ── Selector segmentado ───────────────────────────────────────────────────
+ * Grupo de opciones excluyentes: el color de la aplicación y el modo claro u
+ * oscuro.
+ *
+ * Antes eran seis cadenas de clase idénticas escritas a mano en la misma vista,
+ * con el estado marcado resuelto con `aria-pressed:` y `aria-[pressed=false]:`
+ * dentro de cada una. Seis copias de una decisión: al cambiar el aspecto del
+ * grupo había que cambiarlo seis veces, y con una basta.
+ *
+ * El estado lo lleva `aria-pressed`, no una clase que pone JavaScript, por lo
+ * mismo que en los botones de tema: si el marcado y el aspecto viven en
+ * archivos distintos, cualquier retoque visual se pierde en cuanto se pulsa.
+ * El botón que está marcado se distingue por color, por filete y por peso, de
+ * modo que no depende solo de distinguir el tono. */
+.selector {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.25rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border-system);
+  border-radius: 0.75rem;
+  cursor: pointer;
+}
+
+.selector:hover:not([aria-pressed='true']) {
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--color-white) 26%, transparent);
+}
+
+.selector[aria-pressed='true'] {
+  color: var(--color-accent-text);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--color-accent) 38%, transparent);
+}
+
+/* ── Tarjetas ───────────────────────────────────────────────────────────────
+ * Superficie con profundidad. Es `.surface` más el movimiento, y se aplica a lo
+ * que se puede tocar o pulsar, no a los paneles que solo alojan texto.
+ *
+ * Las tablas de datos y los bloques que envuelven un formulario largo NO la
+ * llevan: una tabla de treinta filas que se levanta al pasar el ratón por encima
+ * es ruido, y en una herramienta clínica el movimiento en la zona de datos
+ * dificulta leerla. */
+.tarjeta {
+  background-color: var(--bg-raised);
+  border: 1px solid var(--border-system);
+  border-radius: 1rem;
+}
+
+/* ── Campos de formulario ───────────────────────────────────────────────────
+ * Antes cada campo repetía `transition-colors focus:border-accent
+ * focus:outline-none` en quince sitios. Aquí está una vez.
+ *
+ * El anillo se dibuja con `outline`, no con `box-shadow`, y no por gusto: una
+ * sombra exterior la recorta cualquier ancestro con `overflow: hidden`, que en
+ * esta aplicación son varios —las tarjetas de la tabla y los paneles con
+ * desplazamiento propio—. El contorno va por fuera de la caja y no se pierde.
+ *
+ * El filete no se vuelve transparente al enfocar, como haría
+ * `focus:border-transparent`: en modo claro el campo se pierde sobre el papel, y
+ * quien navega con teclado queda sin el borde por el que sabe dónde está. En su
+ * lugar se tiñe de acento, que dice lo mismo con más información.
+ *
+ * La regla base va dentro de `:where()`, y por eso vale cero. Con una clase normal
+ * le ganaría a cualquier utilidad de Tailwind, y las utilidades son justamente
+ * los estados que tienen que ganarle: `@error('correo') border-rose-400` es un
+ * campo con `clase="campo"`, y con la regla sin envolver el borde rojo no se
+ * veía nunca. La de `:focus-visible` sí va sin envolver, porque esa gana siempre
+ * y además tiene que ganarle a la regla general de foco de más abajo. */
+:where(.campo) {
+  border-color: var(--border-system);
+}
+
+.campo:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 1px;
+  border-color: var(--color-accent-text);
+}
+
+/* El mismo anillo, pero para cuando el campo está dentro de algo que ya tiene
+   su propio borde y el contorno se solaparía con él. */
+.campo--hundido:focus-visible {
+  outline-offset: -1px;
+}
+
+/* ── Barra de intensidad ─────────────────────────────────────────────────────
+ * La barra con la que se registra «con qué intensidad». Es el único
+ * `input[type="range"]` de la aplicación, y por eso su aspecto se resuelve aquí
+ * entero en vez de repartirse entre la plantilla y un par de reglas sueltas.
+ *
+ * LO RECORRIDO se pinta con un degradado que corta en `--avance`, un porcentaje
+ * que JavaScript escribe en la barra en cada `input`. Los dos tramos salen de dos
+ * variables —recorrido y pendiente— para que el modo claro solo tenga que cambiar
+ * el color del tramo vacío.
+ *
+ * Aquí estaba el motivo de que esto viviera suelto: había una regla
+ * `html.light-mode input[type="range"] { background-color: … !important }` para
+ * que la pista no se perdiera sobre el papel. Un `!important` sobre el fondo
+ * aplana cualquier relleno que se ponga encima, así que en modo claro el
+ * degradado se habría visto a medias. Ahora la pista se repinta desde aquí y esa
+ * regla no hace falta: el color del tramo vacío es una variable, y el modo claro
+ * la cambia.
+ *
+ * EL ASA se dibuja también aquí, y hacía falta. El input lleva `appearance-none`,
+ * y sin `::-webkit-slider-thumb` un range con esa utilidad se queda sin asa: se ve
+ * la barra pero no se ve dónde estás, que es justo lo que este control comunica.
+ *
+ * El anillo de foco lo pone `.campo`, que el input también lleva. El contorno se
+ * dibuja alrededor de una barra de seis píxeles, así que el asa —que es lo que se
+ * alcanzaría con el teclado— se sale de él. Por eso el margen del anillo se
+ * amplía en `.intensidad:focus-visible`, sin quitar el de `.campo`. */
+.intensidad {
+  --intensidad-recorrido: var(--color-accent);
+  --intensidad-pendiente: rgb(255 255 255 / 0.1);
+  --avance: 50%;
+
+  background-image: linear-gradient(
+    to right,
+    var(--intensidad-recorrido) 0 var(--avance),
+    var(--intensidad-pendiente) var(--avance) 100%
+  );
+}
+
+html.light-mode .intensidad {
+  --intensidad-pendiente: #cbd5e1;
+}
+
+.intensidad:focus-visible {
+  outline-offset: 4px;
+}
+
+.intensidad::-webkit-slider-thumb {
+  appearance: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 9999px;
+  background-color: var(--color-accent);
+  /* El filete del color del fondo es lo que despega el asa del tramo recorrido:
+     los dos son de color, y sin la separación el asa desaparece sobre el acento. */
+  border: 2px solid var(--bg-primary);
+  box-shadow: var(--sombra-elevacion);
+  cursor: grab;
+  transition: transform var(--movimiento-duracion) var(--movimiento-curva);
+}
+
+.intensidad::-moz-range-thumb {
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 9999px;
+  background-color: var(--color-accent);
+  border: 2px solid var(--bg-primary);
+  box-shadow: var(--sombra-elevacion);
+  cursor: grab;
+  transition: transform var(--movimiento-duracion) var(--movimiento-curva);
+}
+
+.intensidad:active::-webkit-slider-thumb,
+.intensidad:active::-moz-range-thumb {
+  cursor: grabbing;
+  transform: scale(var(--movimiento-escala-pulsada));
+}
+
+/* La elevación del asa va dentro de `@media (hover: hover)` por el mismo motivo
+   que la de los botones: en una pantalla táctil no existe el estado «encima», y
+   sin esta protección el asa se queda grande después de tocarla. */
+@media (hover: hover) {
+  .intensidad:hover::-webkit-slider-thumb,
+  .intensidad:hover::-moz-range-thumb {
+    transform: scale(var(--movimiento-escala));
+  }
+}
+
+/* La palabra del nivel. Va con el mismo aspecto de rótulo que `.dato-rotulo`,
+   pero el color sale de `data-nivel` porque lo decide JavaScript al mover la
+   barra, igual que ya hacía `.dato-estado` en el juego.
+ *
+ * Son TRES escalones de tono y no diez. Diez colores en diez peldaños de diez
+   puntos no se distinguen entre sí —dos rosados contiguos no son dos tonos que
+   se lean— y además romperían el acento único de la aplicación, que es la regla
+ * que sostiene toda la hoja: un color que aparece en un solo elemento deja de
+ * ser de la marca. Los tres escalones son los colores semánticos que la
+ * aplicación ya usa para lo que exige atención.
+ *
+ * El latido del escalón alto reutiliza el de `.dato-estado[data-nivel='critico']`
+ * en vez de inventar uno nuevo, y por eso se apaga con `prefers-reduced-motion`
+ * sin tener que declararlo otra vez: el bloque de movimiento reducido neutraliza
+ * cualquier `animation`, de donde venga. Al reutilizarlo también se hereda su
+ * profundidad, que está puesta para que el texto siga leyéndose: mira el
+ * comentario del propio `@keyframes latido` y su prueba. */
+.intensidad-nivel {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color var(--movimiento-duracion) var(--movimiento-curva);
+}
+
+.intensidad-nivel[data-nivel='bajo']  { color: var(--text-muted); }
+.intensidad-nivel[data-nivel='medio'] { color: var(--color-amber-400); }
+.intensidad-nivel[data-nivel='alto']  { color: var(--color-rose-400); animation: latido 1.6s ease-in-out infinite; }
+
+/* ── Cifras y datos ─────────────────────────────────────────────────────────
+ * Lo que el usuario tiene que mirar primero se escribe más grande, con la
+ * tipografía de display y cifras de ancho fijo.
+ *
+ * `clamp` en vez de un tamaño fijo porque el mismo componente aparece en una
+ * tarjeta estrecha del panel y en la portada: con un `text-4xl` fijo, el número
+ * se salía de la tarjeta en móvil. */
+.dato {
+  font-family: 'Orbitron', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(1.625rem, 1.1rem + 2.1vw, 2.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--color-accent-text);
+}
+
+.dato--mediano { font-size: clamp(1.375rem, 1rem + 1.5vw, 1.875rem); }
+.dato--grande { font-size: clamp(2.25rem, 1.4rem + 3.4vw, 3.75rem); }
+
+/* El color va en modificadores y no en utilidades sueltas de Tailwind. Una
+   utilidad como `text-white` vive en la capa `utilities` y esta regla no está en
+   ninguna capa: en la cascada gana la que no tiene capa, así que el color por
+   defecto de `.dato` tapaba a la utilidad y las cifras salían siempre en el
+   color de acento. Se podría forzar con `!text-white`, pero entonces cualquier
+   ajuste futuro depende de acordarse de la exclamación. Aquí el tono se
+   declara con una palabra. */
+.dato--acento { color: var(--color-accent-text); }
+.dato--neutro { color: var(--text-primary); }
+.dato--alerta { color: var(--color-neon-rose); }
+.dato--vacio  { color: var(--text-subtle); }
+
+/* Rótulo que acompaña a una cifra. Es la diferencia entre «un número» y «el
+   número que explica esto»: sin rótulo, una cifra grande no dice nada. */
+.dato-rotulo {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+/* Tarjeta de métrica destacada: fondo con un degradado muy bajo, apenas
+   perceptible, para separar la cifra del resto sin gritar. Un degradado fuerte
+   convertiría cada métrica en una subtropical y competirían entre ellas. */
+.dato-tarjeta {
+  position: relative;
+  overflow: hidden;
+  background-image: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--color-accent) 9%, transparent),
+    transparent 62%
+  );
+  border-color: color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+
+html.light-mode .dato-tarjeta {
+  background-image: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--color-accent) 11%, transparent),
+    transparent 62%
+  );
+}
+
+@media (hover: hover) {
+  .dato-tarjeta:hover {
+    border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+    box-shadow: var(--sombra-elevacion);
+    transform: translateY(calc(-1 * var(--movimiento-elevacion)));
+  }
+}
+
+/* ── Módulos ────────────────────────────────────────────────────────────────
+ * Secciones que se alternan con un clic, sin recargar la página.
+ *
+ * Las animaciones no se escriben en CSS sino desde `resources/js/app.js` con
+ * `Element.animate()`. La razón es práctica: alternar dos bloques necesita
+ * esperar a que la salida termine antes de esconder el saliente, y eso es una
+ * promesa, no una clase. Con WAAPI se hace en tres líneas y el navegador se
+ * encarga de borrar las animaciones al terminar.
+ *
+ * Por lo mismo no hay aquí ninguna regla `display: none`: el estado lo lleva el
+ * atributo `hidden`, que es lo que debe usar también el lector de pantalla y el
+ * buscador del teclado, no una clase que solo ven los ojos. */
+.modulo-pestana {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.modulo-pestana:hover:not([aria-selected='true']) {
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--color-accent) 26%, transparent);
+}
+
+/* La pestaña activa se pinta con el acento, y el peso de la tipografía sube para
+   marcar el cambio sin depender solo del color. Un usuario daltónico tiene que
+   poder saber en qué módulo está sin distinguir el cian. */
+.modulo-pestana[aria-selected='true'] {
+  color: var(--color-accent-text);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--color-accent) 38%, transparent);
+}
+
+/* Las flechas del teclado mueven la selección. `roving tabindex`: el grupo de
+   pestañas es un solo elemento tabulable, y dentro se navega con las flechas,
+   que es lo que espera quien conoce este patrón. El botón marcado con
+   `aria-selected="true"` es el único que recibe el foco. */
+.modulo-pestana:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+}
+
+/* Contenedor de los módulos. `grid` y no `block` para que el bloque saliente
+   pueda salirse del flujo sin que el entrante salte de sitio a mitad de la
+   animación. */
+.modulos-contenedor {
+  display: grid;
+}
+
+.modulos-contenedor > [hidden] { display: none; }
+
+/* ── Botones ────────────────────────────────────────────────────────────────
+ *
+ * Antes el mismo botón de enviar aparecía con seis medidas distintas —de `px-4
+ * py-2.5` a `px-7 py-3.5`— y cuatro espaciados distintos, repartidos entre
+ * quince sitios. No eran decisiones de diseño: eran que cada plantilla se
+ * escribió en un momento distinto. Comparar dos botones de la misma página y ver
+ * que no miden lo mismo es la clase de detalle que hace que una interfaz parezca
+ * montage en lugar de página.
+ *
+ * Aquí hay tres variantes y dos medidas, y todas salen de los tokens del tema.
+ * El componente Blade `x-boton` pone la variante; esta regla pone el aspecto. Si
+ * además se necesita algo fuera de lo previsto, se añade una utilidad suelta de
+ * Tailwind por `class`, pero la variante no se reescribe a mano.
+ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-align: center;
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  /* La transición no se declara aquí: la comparten todos los elementos que se
+     mueven, en el bloque de movimiento de más arriba. Si se añadiera otra vez,
+     esta copia —más corta— ganaría por aparecer después y dejaría el botón con
+     una duración distinta de la de las tarjetas. */
+}
+
+/* Un botón que no hace nada debe notarlo. `pointer-events: none` no sirve aquí:
+ * quitar el puntero rompe el foco con teclado, que es justo cuando hace falta
+ * saber que el control existe. */
+.btn:disabled,
+.btn[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* La acción principal de una pantalla. Relleno de acento y tinta de acento:
+ * en modo claro el relleno se mantiene y la tinta no se invierte, porque el
+ * botón no cambia de aspecto al cambiar de tema. */
+.btn--principal {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
+.btn--principal:hover:not(:disabled) { filter: brightness(1.1); }
+/* El hundido al pulsar lo pone la regla común `.btn:active`, más arriba. Aquí
+   hubo un `scale(0.99)` que la anulaba: dos reglas con la misma especificidad,
+   y ganaba la de esta variante, que es justo la que no debía ganar. */
+
+/* Acción secundaria: mismo acento, sin robarle el protagonismo a la principal. */
+.btn--secundario {
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  color: var(--color-accent-text);
+}
+
+.btn--secundario:hover:not(:disabled) { background: color-mix(in srgb, var(--color-accent) 20%, transparent); }
+
+/* Acción neutra: dibuja líneas y texto sin color de marca. Es la de «cancelar»
+ * y la de las acciones terciarias. */
+.btn--neutro {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--color-white) 12%, transparent);
+  color: var(--color-gray-300);
+}
+
+.btn--neutro:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-white) 28%, transparent);
+  color: var(--color-gray-200);
+}
+
+/* Acción destructiva. Sin relleno: «anular un código» y «borrar una anotación»
+ * conviven con acciones que no se pueden deshacer, y un botón rojo sólido
+ * invita a pulsarlo sin leer. */
+.btn--peligro {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--color-rose-400) 32%, transparent);
+  color: var(--color-rose-300);
+}
+
+.btn--peligro:hover:not(:disabled) { background: color-mix(in srgb, var(--color-rose-400) 14%, transparent); }
+
+/* Medidas. La grande es para el único botón de una pantalla —«Guardar mi
+ * respuesta»—; la normal acompaña siempre a otra acción al lado. */
+.btn--grande { padding: 0.875rem 1.5rem; }
+.btn--pequeno { padding: 0.375rem 0.75rem; letter-spacing: 0.12em; }
+
+/* Barra de desplazamiento */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(var(--neon-accent-rgb), 0.35); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--neon-accent); }
+
+/* Foco visible y uniforme. Antes sólo los campos del login tenían anillo, lo
+   que dejaba al resto de la aplicación sin ninguna señal de teclado.
+
+   El anillo se pinta con `--color-accent-text` y no con `--neon-accent`, y la
+   diferencia se nota solo en modo claro. El acento puro es un color para
+   superficies oscuras: sobre el panel de papel da 1.65:1, muy por debajo del 3:1
+   que un indicador de foco necesita, y un anillo que no se ve no es un anillo.
+   `--color-accent-text` es el mismo acento ya mezclado hacia la tinta en modo
+   claro, así que en oscuro sigue siendo el cian de siempre y en claro se vuelve
+   un cian legible. Es el mismo remapeo que ya hacen el texto y los bordes del
+   tema; el foco se había quedado fuera y por eso fallaba solo. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+/* Utilidad heredada, en uso por `perfil/configuracion.blade.php`. */
+@utility text-outline {
+  -webkit-text-stroke: 1px rgba(34, 211, 238, 0.5);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   7. CAPAS DEL PANEL
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Línea de escaneo. `pointer-events: none` y fija: nunca debe capturar clics ni
+   provocar repintados al hacer scroll. */
+.scanline {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    transparent 50%,
+    rgba(var(--neon-accent-rgb), var(--scanline-opacity)) 50%
+  );
+  background-size: 100% 4px;
+  z-index: 30;
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+aside.sidebar-alpha {
+  background-color: var(--bg-sidebar) !important;
+  border-color: var(--border-system) !important;
+  transition: background-color 0.4s ease, border-color 0.4s ease;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   8. ACCESIBILIDAD · MOVIMIENTO REDUCIDO
+
+   La animación infinita es la parte de la estética terminal que más molesta a
+   quien la sufre: el punto "en línea" late cada segundo y la alerta de éxito se
+   enciende y apaga sin parar. Con `prefers-reduced-motion` se apagan todas.
+   ─────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 
-  .text-gray-500, .text-gray-600 {
-    color: #64748b !important;
-  }
+  /* Estas dos no se pueden apagar con `animation: none` porque su estado final
+     es invisible, así que se dejan fijas en su posición final. */
+  .animate-float { transform: none !important; }
+  .scanline { display: none !important; }
 
-  /* ==========================================================================
-     📌 CORRECCIONES ESPECÍFICAS DE CONTRASTE (MODO CLARO)
-     ========================================================================== */
-
-  /* 1. Corrección del Botón de Estado Percibido ("Entusiasta") */
-  /* Cambia la píldora gris oscuro por una clara con borde sutil */
-  .bg-zinc-800, .bg-gray-800, button.bg-black\/40, [class*="bg-zinc-"], [class*="bg-gray-"] {
-    if (&:not(input)) {
-      background-color: rgba(15, 23, 42, 0.05) !important;
-      color: #0f172a !important;
-      border: 1px solid rgba(15, 23, 42, 0.1) !important;
+  /* El movimiento bajo el cursor también se apaga, y no basta con dejar la
+     transición a 0 ms como hace la regla de arriba. Con la transición anulada el
+     botón seguiría apareciendo desplazado dos píxeles y un 2 % más grande al
+     pasar el ratón: el movimiento se habría vuelto instantáneo, que no es lo
+     mismo que no tenerlo. Aquí no se aplica ningún desplazamiento, y el color y
+     el filete sí cambian, porque un cambio de color instantáneo no incomoda a
+     nadie. */
+  @media (hover: hover) {
+    .btn:hover:not(:disabled),
+    .selector:hover,
+    .modulo-pestana:hover:not([aria-selected='true']),
+    .tarjeta:hover,
+    .dato-tarjeta:hover {
+      transform: none;
+      box-shadow: none;
     }
   }
 
-  /* 2. Corrección de la Barra de Energía Vital (Slider Track) */
-  /* Hace visible la línea horizontal del rango donde se mueve el círculo cyan */
-  input[type="range"] {
-    background-color: #cbd5e1 !important; /* Gris acero visible */
-    height: 6px !important;
-    border-radius: 9999px;
+  .btn:active:not(:disabled),
+  .selector:active,
+  .modulo-pestana:active:not([aria-selected='true']) {
+    transform: none;
   }
-
-  /* Por si usas un contenedor personalizado para la pista del slider */
-  .h-2.bg-gray-700, .bg-neutral-800 {
-    background-color: #cbd5e1 !important;
-  }
-
-  /* 3. Corrección del Módulo Calendario */
-  /* El fondo gigante gris oscuro pasa a ser un contenedor blanco limpio o gris ultra claro */
-  aside + main .bg-zinc-900,
-  aside + main .bg-gray-800,
-  aside + main .bg-neutral-900,
-  .p-8.max-w-7xl .bg-black\/40,
-  main .rounded-3xl.bg-black\/20 {
-    background-color: #ffffff !important;
-    border: 1px solid rgba(15, 23, 42, 0.08) !important;
-  }
-
-  /* Los cuadros de los días individuales (Gris claro con texto negro puro) */
-  aside + main .grid > div,
-  main .grid > div {
-    background-color: #f8fafc !important; /* Fondo de día elegante */
-    border: 1px solid rgba(15, 23, 42, 0.06) !important;
-    color: #0f172a !important; /* Números de los días en negro */
-  }
-
-  /* Forzar visibilidad de los números de los días dentro de los cuadros */
-  aside + main .grid > div span,
-  aside + main .grid > div p,
-  main .grid div {
-    color: #0f172a !important;
-    font-weight: 600 !important;
-  }
-
-  /* Etiquetas de los días de la semana (LUN, MAR, MIÉ...) */
-  .text-cyan-400, .text-accent, main .grid > span {
-    color: #0284c7 !important; /* Cyan oscuro legible para títulos sobre blanco */
-    font-weight: 700 !important;
-  }
-}
-
-/* 5. Utilidades personalizadas (Estándar nativo de Tailwind v4) */
-@utility text-outline {
-  -webkit-text-stroke: 1px rgba(34, 211, 238, 0.5);
 }

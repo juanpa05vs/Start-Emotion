@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Feedback extends Model
 {
@@ -11,18 +11,28 @@ class Feedback extends Model
 
     protected $table = 'feedback';
 
-    /**
-     * [REPARACIÓN]: Cambiamos 'mensaje' por 'comentario'
-     * para que coincida con tu base de datos.
-     */
     protected $fillable = [
-        'user_id',
-        'comentario', // 👈 ¡Este es el nombre real en tu DB!
-        'estado'    // Nuevo campo para seguimiento del feedback
+        'comentario',
+        'estado',
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function scopePendiente($query)
+    {
+        return $query->whereRaw('LOWER(estado) = ?', ['pendiente']);
+    }
+
+    public function scopeResuelto($query)
+    {
+        return $query->whereRaw('LOWER(estado) = ?', ['resuelto']);
+    }
+
+    public function getEstaResueltoAttribute(): bool
+    {
+        return strtolower((string) $this->estado) === 'resuelto';
     }
 }

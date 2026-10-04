@@ -80,7 +80,7 @@
     </div>
 
     <div class="user-info">
-        <p style="margin: 0;"><strong>Operador:</strong> {{ $user->nombre }}</p>
+        <p style="margin: 0;"><strong>Estudiante:</strong> {{ $user->nombre }}</p>
         <p style="margin: 5px 0 0 0;"><strong>ID de Sistema:</strong> #00{{ $user->id }} | <strong>Fecha de Reporte:</strong> {{ date('d/m/Y H:i') }}</p>
     </div>
 

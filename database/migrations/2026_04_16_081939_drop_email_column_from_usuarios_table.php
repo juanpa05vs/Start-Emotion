@@ -9,7 +9,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('usuarios', function (Blueprint $table) {
-            // Eliminamos la columna vieja que está causando el conflicto
+            // IMPORTANTE: el índice único de 'email' debe eliminarse ANTES de la columna.
+            // Si se hace al revés, queda un índice huérfano que referencie una columna
+            // inexistente y rompe la migración en SQLite con:
+            // "error in index usuarios_email_unique after drop column: no such column"
+            $table->dropUnique(['email']);
+
             $table->dropColumn('email');
         });
     }
@@ -17,8 +22,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('usuarios', function (Blueprint $table) {
-            // Por si necesitamos volver atrás, la recreamos
-            $table->string('email')->nullable();
+            // Se restaura la columna CON su unicidad original.
+            $table->string('email')->nullable()->unique();
         });
     }
 };

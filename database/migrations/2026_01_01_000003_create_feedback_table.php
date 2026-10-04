@@ -18,8 +18,8 @@ return new class extends Migration
             // [VÍNCULO NEURAL]: Relación con la tabla de usuarios
             // Usamos 'usuarios' porque es el nombre de tu tabla principal.
             $table->foreignId('user_id')
-                  ->constrained('usuarios')
-                  ->onDelete('cascade'); // Si se borra el usuario, se borra su feedback.
+                ->constrained('usuarios')
+                ->onDelete('cascade'); // Si se borra el usuario, se borra su feedback.
 
             // [CONTENIDO]: El cuerpo del reporte o sugerencia
             $table->text('comentario');

@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Seeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -26,11 +26,10 @@ class DatabaseSeeder extends Seeder
         User::factory()->create([
             'nombre' => 'Test User',
             'correo' => 'test@example.com',
-            'password' => bcrypt('password'), // Siempre define una pass si usas factory
-            'rol' => 'jugador',
+            'password' => bcrypt('password'),
+            'rol' => 'estudiante',
         ]);
         */
-
         // Nota: Si prefieres registrarte tú mismo desde la web,
         // puedes dejar el User::factory comentado.
     }

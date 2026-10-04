@@ -2,58 +2,80 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Models\Feedback;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class UsuarioController extends Controller
 {
     /**
-     * Muestra la lista de todos los usuarios registrados.
+     * Gestión de cuentas: dar de alta, cambiar rol y dar de baja.
+     *
+     * QUÉ VE Y QUÉ NO VE
+     *
+     * El administrador gestiona cuentas, no personas. Por eso esta pantalla no
+     * se construye con `User::all()` ni con un `select *` sobre el que después
+     * se pueda mostrar cualquier campo nuevo. Se proyectan solo las columnas que
+     * hacen falta para el trabajo de administración, de modo que añadir un campo
+     * al modelo no lo vuelva visible aquí por accidente.
+     *
+     * Además se omiten `edad` y la fecha de creación: no hacen falta para
+     * administrar una cuenta y sí suman información sobre cada persona
+     * concreta.
      */
     public function index()
     {
-        /** @var \App\Models\User|null $authUser */
+        /** @var User|null $authUser */
         $authUser = Auth::user();
 
-        if (!$authUser || !$authUser->esAdmin()) {
-            return redirect()->route('dashboard')->with('error', 'Nivel Alpha requerido.');
+        if (! $authUser || ! $authUser->esAdmin()) {
+            return redirect()->route('dashboard')->with('error', 'Necesitas permisos de administrador.');
         }
 
-        $usuarios = User::all();
+        $usuarios = User::query()
+            // Solo identidad y rol. Sin email, sin edad, sin actividad.
+            ->select(['id', 'nombre', 'rol', 'created_at'])
+            ->orderBy('nombre')
+            ->get();
+
         return view('usuarios.index', compact('usuarios'));
     }
 
-    /**
-     * GESTIÓN DE PRIVILEGIOS: Sincronización de Rangos.
-     */
     public function updateRole(Request $request, User $user)
     {
         if (Auth::id() === $user->id) {
-            return redirect()->route('usuarios.index')->with('error', 'No puedes auto-degradarte.');
+            return redirect()->route('usuarios.index')->with('error', 'No puedes cambiar tu propio rol.');
         }
 
-        $request->validate(['rol' => 'required|in:Administrador,jugador']);
+        $request->validate([
+            'rol' => 'required|in:estudiante,Psicólogo,Administrador',
+        ]);
 
         try {
-            $user->rol = $request->rol;
+            $nuevoRol = match (true) {
+                Str::lower($request->rol) === 'administrador' => 'Administrador',
+                $request->rol === 'Psicólogo' => 'Psicólogo',
+                default => 'estudiante',
+            };
+            $user->rol = $nuevoRol;
             $user->save();
 
             if (method_exists($user, 'syncRoles')) {
-                $user->syncRoles([$request->rol]);
+                $user->syncRoles([$nuevoRol]);
             }
 
-            return redirect()->route('usuarios.index')->with('success', 'Rango actualizado exitosamente.');
+            return redirect()->route('usuarios.index')->with('success', 'Rol actualizado.');
         } catch (\Exception $e) {
-            return redirect()->route('usuarios.index')->with('error', 'Fallo en la sincronización de protocolos.');
+            Log::warning('Fallo en sincronización de roles Spatie', ['user_id' => $user->id, 'exception' => $e->getMessage()]);
+
+            return redirect()->route('usuarios.index')->with('error', 'No se pudo actualizar el rol.');
         }
     }
 
-    /**
-     * PURGA DE OPERADOR: Eliminación de registros.
-     */
     public function destroy(User $user)
     {
         if (Auth::id() === $user->id) {
@@ -65,35 +87,36 @@ class UsuarioController extends Controller
         }
 
         $user->delete();
-        return redirect()->route('usuarios.index')->with('success', 'Operador purgado del sistema.');
+
+        return redirect()->route('usuarios.index')->with('success', 'Cuenta eliminada.');
     }
 
-    /**
-     * TERMINAL DE CONFIGURACIÓN.
-     */
     public function configuracion()
     {
         return view('perfil.configuracion');
     }
 
-    /**
-     * ACTUALIZACIÓN DE PERFIL: Gestión de Identidad.
-     */
     public function updatePerfil(Request $request)
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = Auth::user();
 
         $request->validate([
             'nombre' => 'nullable|string|max:255',
-            'correo' => 'nullable|email|unique:usuarios,correo,' . $user->id,
+            'correo' => 'nullable|email|unique:usuarios,correo,'.$user->id,
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'tema'   => 'nullable|in:blue,rose,amber,purple'
+            'tema' => 'nullable|in:blue,rose,amber,purple',
         ]);
 
-        if ($request->has('tema')) { $user->tema = $request->tema; }
-        if ($request->has('nombre')) { $user->nombre = $request->nombre; }
-        if ($request->has('correo')) { $user->correo = $request->correo; }
+        if ($request->filled('tema')) {
+            $user->tema = $request->tema;
+        }
+        if ($request->filled('nombre')) {
+            $user->nombre = $request->nombre;
+        }
+        if ($request->filled('correo')) {
+            $user->correo = $request->correo;
+        }
 
         if ($request->hasFile('avatar')) {
             if ($user->avatar) {
@@ -105,72 +128,66 @@ class UsuarioController extends Controller
 
         $user->save();
 
-        return redirect()->route('perfil.config')->with('success', 'TERMINAL SINCRONIZADA: Identidad actualizada.');
+        return redirect()->route('perfil.config')->with('success', 'Tus datos se actualizaron correctamente.');
     }
 
-    /**
-     * PROTOCOLO DE MEJORA: Persistencia de Feedback.
-     */
     public function storeFeedback(Request $request)
     {
         $request->validate([
-            'mensaje' => 'required|string|min:3|max:1000'
+            'mensaje' => 'required|string|min:3|max:1000',
         ]);
 
-        Feedback::create([
-            'user_id'    => Auth::id(),
+        $feedback = new Feedback;
+        $feedback->fill([
             'comentario' => $request->mensaje,
-            'estado'     => 'PENDIENTE'
+            'estado' => 'pendiente',
         ]);
+        $feedback->user_id = Auth::id();
+        $feedback->save();
 
-        return redirect()->route('perfil.config')->with('success', 'REPORTE INDEXADO: El Sector Alpha lo revisará pronto.');
+        return redirect()->route('perfil.config')->with('success', 'Gracias, recibimos tu mensaje. Lo revisaremos pronto.');
     }
 
-    /**
-     * MONITOR DE FEEDBACK: Visualización para Administradores.
-     */
     public function verFeedback()
     {
-        /** @var \App\Models\User|null $authUser */
+        /** @var User|null $authUser */
         $authUser = Auth::user();
 
-        if (!$authUser || !$authUser->esAdmin()) {
+        if (! $authUser || ! $authUser->esAdmin()) {
             return redirect()->route('dashboard');
         }
 
         $reportes = Feedback::with('user')->latest()->get();
+
         return view('admin.feedback', compact('reportes'));
     }
 
-    /**
-     * PURGA DE FEEDBACK: Elimina un reporte del monitor.
-     */
     public function destroyFeedback(Feedback $feedback)
     {
-        /** @var \App\Models\User|null $authUser */
+        /** @var User|null $authUser */
         $authUser = Auth::user();
 
-        if (!$authUser || !$authUser->esAdmin()) {
+        if (! $authUser || ! $authUser->esAdmin()) {
             return abort(403);
         }
 
         $feedback->delete();
-        return back()->with('success', 'Reporte eliminado del monitor.');
+
+        return back()->with('success', 'Mensaje eliminado.');
     }
 
-    /**
-     * ACTUALIZACIÓN DE PROTOCOLO: Marca un feedback como resuelto.
-     */
     public function updateFeedbackStatus(Feedback $feedback)
     {
-        /** @var \App\Models\User|null $authUser */
+        /** @var User|null $authUser */
         $authUser = Auth::user();
 
-        if (!$authUser || !$authUser->esAdmin()) {
+        if (! $authUser || ! $authUser->esAdmin()) {
             return abort(403);
         }
 
-        $feedback->update(['estado' => 'resuelto']);
-        return back()->with('success', 'Protocolo finalizado y archivado.');
+        $feedback->estado = 'resuelto';
+        $feedback->save();
+
+        return back()->with('success', 'Mensaje marcado como resuelto.');
     }
 }

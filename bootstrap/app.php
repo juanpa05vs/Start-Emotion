@@ -1,8 +1,12 @@
 <?php
 
+use App\Http\Middleware\EsEstudiante;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
+use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -11,11 +15,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-    // Aquí es donde le damos sentido al "apodo" que usamos en las rutas
-    $middleware->alias([
-        'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
-        'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
-        'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+        // Aquí es donde le damos sentido al "apodo" que usamos en las rutas
+        $middleware->alias([
+            'role' => RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+            'role_or_permission' => RoleOrPermissionMiddleware::class,
+            // Autoobservación: inicio, historial, evaluación, calendario,
+            // actividades y privacidad. Es de quien se observa a sí mismo.
+            'estudiante' => EsEstudiante::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

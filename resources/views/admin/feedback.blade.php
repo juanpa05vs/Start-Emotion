@@ -1,96 +1,121 @@
 @extends('layouts.app')
 
-@section('title', 'Monitor de Feedback | Alpha Sector')
+@section('title', 'Comentarios | S-Emotion')
 
 @section('content')
-<div class="p-8 max-w-7xl mx-auto">
-    {{-- ENCABEZADO TÉCNICO --}}
-    <div class="flex justify-between items-end mb-10">
+<div class="max-w-4xl">
+
+    {{-- Los comentarios se leen en lista, no en rejilla de tres columnas.
+
+         En rejilla cada tarjeta ocupa como mucho un tercio del ancho y hay que
+         pasar la vista tres veces para ver todo lo que ha llegado. En lista,
+         varias entradas caben a la vez en la pantalla y se comparan sin
+         desplazamiento, que es lo que hace falta para decidir a cuál darle
+         prioridad. --}}
+    <div class="mb-7 flex flex-wrap items-end justify-between gap-4">
         <div>
-            <h1 class="font-orbitron text-3xl font-black text-white uppercase tracking-tighter">
-                Monitor de <span class="text-accent">Feedback</span>
-            </h1>
-            <p class="text-gray-500 text-[10px] uppercase tracking-[0.3em]">Protocolo de Mejora Continua // Sector Alpha</p>
+            <h1 class="font-orbitron text-2xl font-bold tracking-tight adaptive-title">Comentarios</h1>
+            <p class="mt-1.5 text-[13px] text-gray-400">
+                Lo que han escrito quienes usan la herramienta. Márcalos como
+                finalizados cuando los hayas atendido.
+            </p>
         </div>
-        <div class="flex gap-8">
-            <div class="text-right">
-                <span class="text-accent font-black text-2xl font-orbitron">{{ count($reportes) }}</span>
-                <p class="text-[7px] text-gray-600 uppercase font-black tracking-widest">Reportes Totales</p>
-            </div>
-        </div>
+
+        <p class="text-[12px] text-gray-500">
+            <span class="font-mono text-[15px] text-accent-text">{{ count($reportes) }}</span>
+            {{ \Illuminate\Support\Str::plural('comentario', count($reportes)) }}
+        </p>
     </div>
 
-    {{-- REJILLA DE REPORTES --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        @forelse($reportes as $reporte)
-            @php
-                // Lógica de color por estado
-                $isResuelto = $reporte->estado === 'resuelto';
-                $statusColor = $isResuelto ? 'text-green-400 border-green-500/30 bg-green-500/10' : 'text-amber-400 border-amber-500/30 bg-amber-500/10';
-            @endphp
+    @forelse ($reportes as $reporte)
+        @php
+            // `resuelto` es el estado bueno y `pendiente` el que exige atención.
+            // El color va en la misma clave que la etiqueta para que no puedan
+            // contradecirse: antes el texto venía del dato y el color de una
+            // condición aparte, y bastaba un cambio en el controlador para que
+            // «pendiente» saliera en verde.
+            $estados = [
+                'resuelto' => ['etiqueta' => 'Atendido', 'clases' => 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'],
+                'pendiente' => ['etiqueta' => 'Pendiente', 'clases' => 'border-amber-500/30 bg-amber-500/10 text-amber-300'],
+            ];
+            $estado = $estados[$reporte->estado] ?? ['etiqueta' => \Illuminate\Support\Str::headline($reporte->estado ?? 'Recibido'), 'clases' => 'border-white/10 bg-white/5 text-gray-400'];
+            $nombre = $reporte->user->nombre ?? 'Cuenta eliminada';
+        @endphp
 
-            <div class="bg-black/40 border border-white/10 backdrop-blur-xl rounded-2xl p-6 relative overflow-hidden group hover:border-accent/40 transition-all duration-500">
+        <article class="mb-3 flex gap-4 rounded-panel border border-white/10 bg-black/40 p-4 transition-colors hover:border-white/20 sm:p-5">
 
-                {{-- BOTÓN DE ELIMINAR (Top Right) --}}
-                <form action="{{ route('feedback.destroy', $reporte->id) }}" method="POST" class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" onclick="return confirm('¿Confirmar purga de este reporte?')" class="text-gray-600 hover:text-red-500 transition-colors">
-                        <i class="fa-solid fa-trash-can text-xs"></i>
-                    </button>
-                </form>
+            {{-- La acción de borrar estaba en `opacity-0 group-hover:opacity-100`:
+                 solo aparecía al pasar el ratón por encima. Con teclado no se
+                 veía nunca, y en un móvil no se podía tocar. --}}
+            <div class="shrink-0">
+                <img src="{{ $reporte->user && $reporte->user->avatar
+                        ? asset('storage/' . $reporte->user->avatar)
+                        : 'https://ui-avatars.com/api/?name='.urlencode($nombre).'&background=000&color=fff' }}"
+                     alt=""
+                     class="h-10 w-10 rounded-pill border border-accent/25 object-cover">
+            </div>
 
-                {{-- INFO DEL OPERADOR --}}
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="h-10 w-10 rounded-full border border-accent/30 p-0.5 bg-black">
-                        <img src="{{ $reporte->user && $reporte->user->avatar ? asset('storage/' . $reporte->user->avatar) : 'https://ui-avatars.com/api/?name='.urlencode($reporte->user->nombre ?? 'U').'&background=000&color=fff' }}"
-                             class="h-full w-full rounded-full object-cover">
-                    </div>
-                    <div>
-                        <h3 class="text-white text-xs font-black uppercase tracking-tight">{{ $reporte->user->nombre ?? 'Desconocido' }}</h3>
-                        <p class="text-[8px] text-accent font-bold uppercase tracking-widest">{{ $reporte->user->rol ?? 'Operador' }}</p>
-                    </div>
+            <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+                    <h2 class="text-[14px] font-semibold text-white">{{ $nombre }}</h2>
+
+                    <span class="rounded-pill border px-2 py-0.5 text-[11px] font-medium {{ $estado['clases'] }}">
+                        {{ $estado['etiqueta'] }}
+                    </span>
+
+                    {{-- La fecha va al final de la línea de metadatos, no
+                         destacada: es el dato menos accionable de la fila. --}}
+                    <time datetime="{{ $reporte->created_at->toIso8601String() }}"
+                          class="text-[12px] text-gray-500">
+                        {{ $reporte->created_at->translatedFormat('j \d\e F, H:i') }}
+                    </time>
                 </div>
 
-                {{-- CONTENIDO DEL REPORTE --}}
-                <div class="min-h-[100px] border-l-2 border-accent/20 pl-4 mb-4">
-                    <p class="text-gray-300 text-sm leading-relaxed font-light">
-                        "{{ $reporte->comentario }}"
+                <blockquote class="mt-2.5 border-l-2 border-accent/25 pl-3.5">
+                    <p class="text-[13px] leading-relaxed text-gray-300">
+                        {{ $reporte->comentario }}
                     </p>
-                </div>
+                </blockquote>
 
-                {{-- ACCIONES Y ESTADO --}}
-                <div class="mt-6 pt-4 border-t border-white/5 flex justify-between items-center">
-                    <div class="flex flex-col">
-                        <span class="text-[9px] text-gray-600 font-black uppercase tracking-tighter">
-                            <i class="fa-regular fa-clock mr-1"></i> {{ $reporte->created_at->diffForHumans() }}
-                        </span>
-                    </div>
+                <div class="mt-3.5 flex flex-wrap items-center gap-2">
+                    @unless ($reporte->estado === 'resuelto')
+                        <form action="{{ route('feedback.updateStatus', $reporte->id) }}" method="POST">
+                            @csrf
+                            @method('PATCH')
+                            {{-- Antes era un botón con `border-emerald-500/40` y
+                                 `text-emerald-400`: el texto se remapeaba en modo
+                                 claro pero el filete no, y `--color-emerald-500`
+                                 sobre blanco se quedaba en 2.5:1 cuando el umbral
+                                 de un filete es 3:1. El estado «atendido» ya lo
+                                 dice la etiqueta de al lado; el botón no necesita
+                                 ser verde para decirlo también. --}}
+                            <x-boton-secundario type="submit" tamano="pequeno" icono="check">
+                                Marcar como atendido
+                            </x-boton-secundario>
+                        </form>
+                    @endunless
 
-                    <div class="flex items-center gap-3">
-                        {{-- BOTÓN CAMBIAR ESTADO (Solo si está pendiente) --}}
-                        @if(!$isResuelto)
-                            <form action="{{ route('feedback.updateStatus', $reporte->id) }}" method="POST">
-                                @csrf
-                                @method('PATCH')
-                                <button type="submit" class="text-[8px] text-gray-500 hover:text-green-400 transition-all font-black uppercase">
-                                    Finalizar <i class="fa-solid fa-circle-check ml-1"></i>
-                                </button>
-                            </form>
-                        @endif
-
-                        <span class="px-3 py-1 border {{ $statusColor }} text-[8px] font-black uppercase rounded-full shadow-lg">
-                            {{ $reporte->estado ?? 'RECIBIDO' }}
-                        </span>
-                    </div>
+                    <form action="{{ route('feedback.destroy', $reporte->id) }}" method="POST">
+                        @csrf
+                        @method('DELETE')
+                        <x-boton-peligro tipo="submit" tamano="pequeno" icono="trash-can"
+                                 onclick="return confirm('¿Borrar este comentario? No se puede recuperar.')"
+                                 aria-label="Borrar el comentario de {{ $nombre }}">
+                            Borrar
+                        </x-boton-peligro>
+                    </form>
                 </div>
             </div>
-        @empty
-            <div class="col-span-full py-20 text-center bg-black/20 border border-dashed border-white/10 rounded-3xl">
-                <i class="fa-solid fa-satellite-dish text-gray-800 text-5xl mb-4"></i>
-                <p class="text-gray-600 font-orbitron text-xs uppercase tracking-widest">No se detectan transmisiones de feedback</p>
-            </div>
-        @endforelse
-    </div>
+        </article>
+    @empty
+        <div class="surface rounded-panel">
+            <x-estado-vacio
+                icono="fa-comment-dots"
+                titulo="Todavía no hay comentarios"
+                mensaje="Aquí aparecerá lo que escriban las personas usuarias desde su cuenta."
+                detalle="Si alguien envía un comentario y no lo ves en esta lista, conviene mirar los registros del servidor: el formulario es el único punto por el que entra." />
+        </div>
+    @endforelse
+
 </div>
 @endsection

@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\EvaluacionPsicometrica;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class EvaluacionPsicometricaController extends Controller
@@ -13,7 +13,7 @@ class EvaluacionPsicometricaController extends Controller
      */
     public function create()
     {
-      //  /** @var \App\Models\Usuario|null $user */
+        //  /** @var \App\Models\Usuario|null $user */
         $user = Auth::user();
         $ultimaEvaluacion = EvaluacionPsicometrica::where('user_id', Auth::id())->latest()->first();
 
@@ -28,20 +28,20 @@ class EvaluacionPsicometricaController extends Controller
         // 1. Validación de reactivos de escala Likert (1 = Nunca, 5 = Siempre)
         $validated = $request->validate([
             // Dimensión 1: Estresores Académicos (4 reactivos)
-            'e_sobrecarga'    => 'required|integer|between:1,5',
-            'e_evaluaciones'  => 'required|integer|between:1,5',
-            'e_tiempo'        => 'required|integer|between:1,5',
-            'e_profesores'    => 'required|integer|between:1,5',
+            'e_sobrecarga' => 'required|integer|between:1,5',
+            'e_evaluaciones' => 'required|integer|between:1,5',
+            'e_tiempo' => 'required|integer|between:1,5',
+            'e_profesores' => 'required|integer|between:1,5',
 
             // Dimensión 2: Reacciones / Síntomas (4 reactivos)
-            's_fatiga'        => 'required|integer|between:1,5',
-            's_ansiedad'      => 'required|integer|between:1,5',
+            's_fatiga' => 'required|integer|between:1,5',
+            's_ansiedad' => 'required|integer|between:1,5',
             's_concentracion' => 'required|integer|between:1,5',
-            's_frustracion'   => 'required|integer|between:1,5',
+            's_frustracion' => 'required|integer|between:1,5',
 
             // Dimensión 3: Afrontamiento (2 reactivos)
-            'a_resolucion'    => 'required|integer|between:1,5',
-            'a_comunicacion'  => 'required|integer|between:1,5',
+            'a_resolucion' => 'required|integer|between:1,5',
+            'a_comunicacion' => 'required|integer|between:1,5',
         ]);
 
         // 2. Normalización de subescalas a porcentajes (0 a 100%)
@@ -59,29 +59,43 @@ class EvaluacionPsicometricaController extends Controller
         $scoreGlobal = (int) round(max(0, min(100, ($scoreEstresores * 0.40) + ($scoreSintomas * 0.50) + ((100 - $scoreAfrontamiento) * 0.10))));
 
         // 4. Baremación Clínica (Nivel de Estrés)
-        $nivelEstres = match(true) {
+        $nivelEstres = match (true) {
             $scoreGlobal >= 70 => 'severo',
             $scoreGlobal >= 40 => 'moderado',
-            default            => 'bajo',
+            default => 'bajo',
         };
 
         // 5. Asignación del Ground Truth Afectivo según sintomatología predominante
         $estadoPredominante = $this->determinarEstadoAfectivoPredominante($validated, $scoreGlobal);
 
         // 6. Persistencia del registro clínico
-        EvaluacionPsicometrica::create([
-            'user_id'                      => Auth::id(),
-            'instrumento'                  => 'SISCO_ESTRES',
-            'puntaje_estresores'           => $scoreEstresores,
-            'puntaje_sintomas'             => $scoreSintomas,
-            'puntaje_afrontamiento'        => $scoreAfrontamiento,
-            'puntaje_global'               => $scoreGlobal,
-            'nivel_estres'                 => $nivelEstres,
-            'estado_afectivo_predominante' => $estadoPredominante,
-            'respuestas_detalle'           => $validated,
-        ]);
+        // 'user_id' no está en $fillable (a propósito: evita asignación masiva), por eso
+        // se crea la entidad y se asigna la FK como propiedad, no vía create().
+        $evaluacion = new EvaluacionPsicometrica;
+        $evaluacion->instrumento = 'SISCO_ESTRES';
+        $evaluacion->puntaje_estresores = $scoreEstresores;
+        $evaluacion->puntaje_sintomas = $scoreSintomas;
+        $evaluacion->puntaje_afrontamiento = $scoreAfrontamiento;
+        $evaluacion->puntaje_global = $scoreGlobal;
+        $evaluacion->nivel_estres = $nivelEstres;
+        $evaluacion->estado_afectivo_predominante = $estadoPredominante;
+        $evaluacion->respuestas_detalle = $validated;
+        $evaluacion->user_id = Auth::id();
+        $evaluacion->save();
 
-        return redirect()->route('dashboard')->with('success', "Calibración Psicométrica completada con éxito (Nivel: " . ucfirst($nivelEstres) . ").");
+        // El mensaje es lo único que ve quien acaba de enviar el cuestionario, y antes
+        // decía «Calibración Psicométrica completada con éxito (Nivel: Severo)»:
+        // tres términos que no significan nada fuera del equipo, y un «éxito» que
+        // celebrate el guardado en lugar de decir qué ha pasado. Además daba el
+        // nivel sin decir qué significa, que es justo lo que deja con dudas a
+        // quien ha contestado.
+        $mensaje = $nivelEstres === 'bajo'
+            ? 'Respuesta guardada. Tu nivel de estrés está dentro de lo habitual.'
+            : ($nivelEstres === 'moderado'
+                ? 'Respuesta guardada. Tu nivel de estrés está por encima de lo habitual: puede ser buena idea hablarlo con alguien.'
+                : 'Respuesta guardada. Tu nivel de estrés está alto. Si te cuesta mucho, considera hablarlo con el profesional de psicología de tu centro.');
+
+        return redirect()->route('dashboard')->with('success', $mensaje);
     }
 
     /**

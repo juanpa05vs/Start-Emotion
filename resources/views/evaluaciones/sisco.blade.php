@@ -1,240 +1,207 @@
 @extends('layouts.app')
 
-@section('title', 'S-Emotion | Calibración Psicométrica SISCO')
-
-@push('styles')
-<style>
-    /* Estilos reactivos para los botones de escala Likert */
-    .likert-option input[type="radio"]:checked + label {
-        background-color: var(--neon-accent);
-        color: #000000;
-        font-weight: 900;
-        border-color: var(--neon-accent);
-        box-shadow: 0 0 15px var(--neon-accent);
-        transform: scale(1.05);
-    }
-</style>
-@endpush
+@section('title', 'Encuesta de estrés | S-Emotion')
 
 @section('content')
-<div class="max-w-5xl mx-auto space-y-8 select-none">
+<div class="max-w-5xl">
 
-    {{-- CABECERA --}}
-    <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-white/10 pb-6 gap-4">
-        <div>
-            <div class="flex items-center gap-2 mb-2">
-                <span class="px-2.5 py-0.5 rounded-full text-[8px] font-black tracking-widest uppercase bg-purple-500/10 text-purple-400 border border-purple-500/30 font-orbitron">
-                    GOLD STANDARD // INVENTARIO SISCO
-                </span>
-                <span class="px-2.5 py-0.5 rounded-full text-[8px] font-black tracking-widest uppercase bg-cyan-500/10 text-neon-cyan border border-cyan-500/30 font-orbitron">
-                    BAREMACIÓN PSICOMÉTRICA
-                </span>
+    {{--
+        La escala se llama SISCO, que es el nombre del instrumento, pero la
+        pantalla se titula por lo que hace. Antes se llamaba «Calibración de
+        Estrés Académico» y llevaba dos etiquetas —«GOLD STANDARD» y
+        «BAREMACIÓN PSICOMÉTRICA»— que no significan nada para quien contesta y
+        sí para quien se loenioría leyendo: el mensaje que transmite es que el
+        cuestionario es serio, y eso se consigue con preguntas claras, no con
+        dos términos en inglés.
+    --}}
+    <div class="mb-6 border-b border-white/5 pb-5">
+        <h1 class="font-orbitron text-2xl font-bold tracking-tight adaptive-title">Encuesta de estrés</h1>
+        <p class="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-gray-400">
+            Diez afirmaciones sobre cómo has vivido las últimas semanas. No hay respuestas
+            buenas ni malas: sirve para ver cómo estás ahora, no para compararte con nadie.
+        </p>
+    </div>
+
+    {{-- Resultado de la última vez. Solo aparece si ya se respondió alguna. --}}
+    @if (! empty($ultimaEvaluacion))
+        <div class="dato-tarjeta mb-7 flex flex-wrap items-center gap-x-8 gap-y-4 rounded-panel border px-5 py-4">
+            <div>
+                <p class="dato-rotulo mb-1.5">Tu última encuesta</p>
+                <p class="mt-1 text-[14px] font-semibold adaptive-title">
+                    <time datetime="{{ $ultimaEvaluacion->created_at?->toDateString() }}">
+                        {{ $ultimaEvaluacion->created_at?->translatedFormat('j \d\e F \d\e Y') }}
+                    </time>
+                </p>
             </div>
-            <h1 class="font-orbitron text-2xl font-black adaptive-title uppercase tracking-tighter">
-                Calibración de <span class="text-accent">Estrés Académico</span>
-            </h1>
-            <p class="text-gray-500 text-[9px] uppercase tracking-[0.3em] mt-1 font-semibold">
-                Evaluación estandarizada para determinar el estado de referencia conductual
-            </p>
+
+            <div class="hidden h-9 w-px bg-white/10 sm:block" aria-hidden="true"></div>
+
+            <div>
+                <p class="dato-rotulo mb-1.5">Nivel de estrés</p>
+                <p @class([
+                    'mt-1 text-[14px] font-semibold adaptive-title',
+                    'text-rose-400' => $ultimaEvaluacion->nivel_estres === 'severo',
+                    'text-amber-400' => $ultimaEvaluacion->nivel_estres === 'moderado',
+                    'text-emerald-400' => $ultimaEvaluacion->nivel_estres === 'bajo',
+                ])>
+                    {{ $ultimaEvaluacion->nivelEstresEtiqueta() }}
+                </p>
+            </div>
+
+            <div class="hidden h-9 w-px bg-white/10 sm:block" aria-hidden="true"></div>
+
+            <div>
+                <p class="dato-rotulo mb-1.5">Lo que más pesó</p>
+                <p class="mt-1 text-[14px] font-semibold adaptive-title">
+                    {{ $ultimaEvaluacion->estadoAfectivoEtiqueta() ?? '—' }}
+                </p>
+            </div>
+
+            <div class="hidden h-9 w-px bg-white/10 sm:block" aria-hidden="true"></div>
+
+            <div>
+                <p class="dato-rotulo mb-1.5">Índice global</p>
+                <p class="dato dato--mediano">
+                    {{ $ultimaEvaluacion->puntaje_global }}<span class="dato--mediano font-body text-gray-500">/100</span>
+                </p>
+            </div>
         </div>
+    @endif
 
-        @if(isset($ultimaEvaluacion))
-            <div class="bg-black/40 border border-white/10 p-4 rounded-2xl backdrop-blur-md flex items-center gap-4">
-                <div>
-                    <span class="text-[7px] text-gray-500 uppercase tracking-widest block font-orbitron font-black">Última Calibración</span>
-                    <span class="text-xs font-black uppercase font-orbitron {{ $ultimaEvaluacion->nivel_estres === 'severo' ? 'text-rose-500' : ($ultimaEvaluacion->nivel_estres === 'moderado' ? 'text-amber-400' : 'text-emerald-400') }}">
-                        Estrés {{ $ultimaEvaluacion->nivel_estres }} ({{ $ultimaEvaluacion->puntaje_global }}%)
-                    </span>
-                </div>
-                <div class="h-8 w-[1px] bg-white/10"></div>
-                <div class="text-right">
-                    <span class="text-[7px] text-gray-500 uppercase tracking-widest block font-orbitron font-black">Predominante</span>
-                    <span class="text-xs font-black uppercase font-orbitron text-purple-400">
-                        {{ $ultimaEvaluacion->estado_afectivo_predominante }}
-                    </span>
-                </div>
-            </div>
-        @endif
+    {{--
+        Guía de la escala. Se lee como una frase, no como una tabla: los números
+        van en Orbitron porque son un dato, y las palabras en la tipografía del
+        cuerpo porque es lo que hay que entender. Antes era una fila de texto en
+        mayúsculas con corchetes alrededor del título.
+    --}}
+    <div class="mb-8 rounded-panel border border-white/5 bg-white/[0.02] px-5 py-3.5">
+        <p class="text-[13px] leading-relaxed text-gray-400">
+            <span class="font-semibold adaptive-title">Cómo responder:</span>
+            cada afirmación se valora del 1 al 5, de
+            <span class="font-orbitron text-accent-text">1</span> (nunca)
+            a <span class="font-orbitron text-accent-text">5</span> (siempre).
+        </p>
     </div>
 
-    {{-- GUÍA DE ESCALA LIKERT --}}
-    <div class="bg-white/[0.02] border border-white/5 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-[8px] font-orbitron uppercase text-gray-400">
-        <span class="font-black text-accent">[ GUÍA DE ESCALA LIKERT ]:</span>
-        <span><strong class="text-white">1</strong> = Nunca</span>
-        <span><strong class="text-white">2</strong> = Rara vez</span>
-        <span><strong class="text-white">3</strong> = Algunas veces</span>
-        <span><strong class="text-white">4</strong> = Casi siempre</span>
-        <span><strong class="text-white">5</strong> = Siempre</span>
-    </div>
-
-    {{-- FORMULARIO SISCO --}}
-    <form action="{{ route('psicometria.store') }}" method="POST" class="space-y-8">
+    {{-- `data-envio-unico`: son diez preguntas y el guardado recalcula el
+         índice global. Sin aviso de espera, quien tiene prisa contesta y pulsa
+         otra vez creyendo que no se ha guardado. --}}
+    <form action="{{ route('psicometria.store') }}" method="POST" data-envio-unico>
         @csrf
 
-        {{-- ======================================================== --}}
-        {{-- DIMENSIÓN 1: ESTRESORES ACADÉMICOS --}}
-        {{-- ======================================================== --}}
-        <div class="bg-black/40 border border-white/10 p-6 md:p-8 rounded-3xl backdrop-blur-xl shadow-2xl space-y-6">
-            <div class="flex items-center gap-3 border-b border-white/5 pb-4">
-                <div class="h-8 w-8 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-orbitron font-black text-xs">
-                    01
-                </div>
-                <div>
-                    <h2 class="font-orbitron text-sm font-black uppercase tracking-wider text-cyan-400">
-                        Dimensión I: Estresores Académicos
-                    </h2>
-                    <p class="text-gray-500 text-[8px] uppercase tracking-widest">Estímulos del entorno universitario que generan tensión</p>
-                </div>
-            </div>
+        @php
+            $escala = [
+                1 => 'Nunca',
+                2 => 'Rara vez',
+                3 => 'Algunas veces',
+                4 => 'Casi siempre',
+                5 => 'Siempre',
+            ];
 
-            @php
-                $estresores = [
-                    ['name' => 'e_sobrecarga', 'label' => 'Sobrecarga de tareas, reportes y trabajos escolares.'],
-                    ['name' => 'e_evaluaciones', 'label' => 'Evaluaciones, exámenes parciales y entregas finales.'],
-                    ['name' => 'e_tiempo', 'label' => 'Tiempo limitado para realizar las actividades académicas.'],
-                    ['name' => 'e_profesores', 'label' => 'Nivel de exigencia o metodología de los docentes.'],
-                ];
-            @endphp
+            $bloques = [
+                [
+                    'numero' => '1',
+                    'titulo' => 'Lo que te pone bajo presión',
+                    'ayuda' => 'Situaciones del entorno académico que te generan tensión.',
+                    'tono' => 'accent',
+                    'items' => [
+                        ['name' => 'e_sobrecarga', 'label' => 'Sobrecarga de tareas, reportes y trabajos escolares.'],
+                        ['name' => 'e_evaluaciones', 'label' => 'Evaluaciones, exámenes parciales y entregas finales.'],
+                        ['name' => 'e_tiempo', 'label' => 'Tiempo limitado para realizar las actividades académicas.'],
+                        ['name' => 'e_profesores', 'label' => 'Nivel de exigencia o metodología de los docentes.'],
+                    ],
+                ],
+                [
+                    'numero' => '2',
+                    'titulo' => 'Lo que notas en el cuerpo y en el ánimo',
+                    'ayuda' => 'Reacciones físicas y emocionales que has observado cuando aparece esa presión.',
+                    'tono' => 'rose',
+                    'items' => [
+                        ['name' => 's_fatiga', 'label' => 'Fatiga crónica, cansancio excesivo, dolores de cabeza o tensión muscular.'],
+                        ['name' => 's_ansiedad', 'label' => 'Inquietud, palpitaciones, sensación de prisa constante o angustia.'],
+                        ['name' => 's_concentracion', 'label' => 'Problemas de concentración, olvidos frecuentes o bloqueo mental.'],
+                        ['name' => 's_frustracion', 'label' => 'Sentimientos de irritabilidad, impotencia, frustración o desgano.'],
+                    ],
+                ],
+                [
+                    'numero' => '3',
+                    'titulo' => 'Lo que haces para manejarlo',
+                    'ayuda' => 'Qué te ha servido hasta ahora para bajar esa carga.',
+                    'tono' => 'accent',
+                    'items' => [
+                        ['name' => 'a_resolucion', 'label' => 'Planificar, priorizar y resolver problemas paso a paso.'],
+                        ['name' => 'a_comunicacion', 'label' => 'Pedir apoyo, hablar con alguien o acudir a tutoría.'],
+                    ],
+                ],
+            ];
+        @endphp
 
-            <div class="space-y-4">
-                @foreach($estresores as $item)
-                    <div class="p-4 bg-white/[0.02] border border-white/5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-white/20 transition-all">
-                        <p class="text-xs adaptive-title font-medium leading-relaxed md:max-w-xl">
-                            {{ $item['label'] }}
-                        </p>
-                        <div class="flex items-center gap-2 shrink-0">
-                            @for($i = 1; $i <= 5; $i++)
-                                <div class="likert-option">
-                                    <input type="radio"
-                                           id="{{ $item['name'] }}_{{ $i }}"
-                                           name="{{ $item['name'] }}"
-                                           value="{{ $i }}"
-                                           class="sr-only"
-                                           required>
-                                    <label for="{{ $item['name'] }}_{{ $i }}"
-                                           class="h-9 w-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xs font-orbitron cursor-pointer hover:border-white/40 transition-all text-gray-300">
-                                        {{ $i }}
-                                    </label>
-                                </div>
-                            @endfor
+        <div class="space-y-6">
+            @foreach ($bloques as $bloque)
+                <section class="rounded-panel border border-white/10 p-5 sm:p-6">
+                    <div class="mb-5 flex items-start gap-3.5 border-b border-white/5 pb-4">
+                        <span @class([
+                            'flex h-8 w-8 shrink-0 items-center justify-center rounded-control border font-orbitron text-[12px] font-bold',
+                            'border-accent/30 bg-accent/10 text-accent-text' => $bloque['tono'] === 'accent',
+                            'border-rose-500/30 bg-rose-500/10 text-rose-400' => $bloque['tono'] === 'rose',
+                        ])>
+                            {{ $bloque['numero'] }}
+                        </span>
+                        <div>
+                            <h2 class="text-[15px] font-semibold adaptive-title">{{ $bloque['titulo'] }}</h2>
+                            <p class="mt-0.5 text-[12px] leading-relaxed text-gray-500">{{ $bloque['ayuda'] }}</p>
                         </div>
                     </div>
-                @endforeach
-            </div>
-        </div>
 
-        {{-- ======================================================== --}}
-        {{-- DIMENSIÓN 2: MANIFESTACIONES (SÍNTOMAS / REACCIONES) --}}
-        {{-- ======================================================== --}}
-        <div class="bg-black/40 border border-white/10 p-6 md:p-8 rounded-3xl backdrop-blur-xl shadow-2xl space-y-6">
-            <div class="flex items-center gap-3 border-b border-white/5 pb-4">
-                <div class="h-8 w-8 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 font-orbitron font-black text-xs">
-                    02
-                </div>
-                <div>
-                    <h2 class="font-orbitron text-sm font-black uppercase tracking-wider text-rose-400">
-                        Dimensión II: Manifestaciones Corporales, Psicológicas y Anímicas
-                    </h2>
-                    <p class="text-gray-500 text-[8px] uppercase tracking-widest">Reacciones físicas y emocionales experimentadas frente al estrés</p>
-                </div>
-            </div>
+                    <div class="space-y-2.5">
+                        @foreach ($bloque['items'] as $item)
+                            {{-- Estas filas NO llevan `.tarjeta`. Se mueven al pasar el ratón, pero no se
+                                     levantan: son treinta y dos filas seguidas, y
+                                     una columna de tarjetas elevándose cada vez que
+                                     el ratón pasa de arriba abajo convierte la
+                                     encuesta en una superficie difícil de leer de
+                                     un tirón. El color del filete y el estado
+                                     marcado bastan. --}}
+                            <div class="flex flex-col gap-3.5 rounded-control border border-white/5 bg-white/[0.02] p-4 transition-colors hover:border-white/15 md:flex-row md:items-center md:justify-between">
+                                <p class="text-[13px] leading-relaxed text-gray-200 md:max-w-xl">
+                                    {{ $item['label'] }}
+                                </p>
 
-            @php
-                $sintomas = [
-                    ['name' => 's_fatiga', 'label' => 'Fatiga crónica, cansancio excesivo, dolores de cabeza o tensión muscular.'],
-                    ['name' => 's_ansiedad', 'label' => 'Inquietud, palpitaciones, sensación de prisa constante o angustia.'],
-                    ['name' => 's_concentracion', 'label' => 'Problemas de concentración, olvidos frecuentes o bloqueo mental.'],
-                    ['name' => 's_frustracion', 'label' => 'Sentimientos de irritabilidad, impotencia, frustración o desgano.'],
-                ];
-            @endphp
-
-            <div class="space-y-4">
-                @foreach($sintomas as $item)
-                    <div class="p-4 bg-white/[0.02] border border-white/5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-white/20 transition-all">
-                        <p class="text-xs adaptive-title font-medium leading-relaxed md:max-w-xl">
-                            {{ $item['label'] }}
-                        </p>
-                        <div class="flex items-center gap-2 shrink-0">
-                            @for($i = 1; $i <= 5; $i++)
-                                <div class="likert-option">
-                                    <input type="radio"
-                                           id="{{ $item['name'] }}_{{ $i }}"
-                                           name="{{ $item['name'] }}"
-                                           value="{{ $i }}"
-                                           class="sr-only"
-                                           required>
-                                    <label for="{{ $item['name'] }}_{{ $i }}"
-                                           class="h-9 w-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xs font-orbitron cursor-pointer hover:border-white/40 transition-all text-gray-300">
-                                        {{ $i }}
-                                    </label>
+                                {{-- `escala-likert` aporta el aspecto y el estado
+                                     marcado, y el color sale de los tokens del
+                                     tema: nada de esta fila está escrito dos
+                                     veces. --}}
+                                <div class="escala-likert flex shrink-0 items-center gap-1.5">
+                                    @foreach ($escala as $valor => $palabra)
+                                        <input type="radio"
+                                               id="{{ $item['name'] }}_{{ $valor }}"
+                                               name="{{ $item['name'] }}"
+                                               value="{{ $valor }}"
+                                               class="sr-only"
+                                               required>
+                                        <label for="{{ $item['name'] }}_{{ $valor }}">
+                                            <span aria-hidden="true">{{ $valor }}</span>
+                                            <span class="sr-only">{{ $valor }} · {{ $palabra }}</span>
+                                        </label>
+                                    @endforeach
                                 </div>
-                            @endfor
-                        </div>
+                            </div>
+                        @endforeach
                     </div>
-                @endforeach
-            </div>
+                </section>
+            @endforeach
         </div>
 
-        {{-- ======================================================== --}}
-        {{-- DIMENSIÓN 3: ESTRATEGIAS DE AFRONTAMIENTO --}}
-        {{-- ======================================================== --}}
-        <div class="bg-black/40 border border-white/10 p-6 md:p-8 rounded-3xl backdrop-blur-xl shadow-2xl space-y-6">
-            <div class="flex items-center gap-3 border-b border-white/5 pb-4">
-                <div class="h-8 w-8 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 font-orbitron font-black text-xs">
-                    03
-                </div>
-                <div>
-                    <h2 class="font-orbitron text-sm font-black uppercase tracking-wider text-purple-400">
-                        Dimensión III: Estrategias de Afrontamiento
-                    </h2>
-                    <p class="text-gray-500 text-[8px] uppercase tracking-widest">Acciones implementadas para mitigar la carga académica</p>
-                </div>
-            </div>
+        <div class="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+            <p class="max-w-sm text-[12px] leading-relaxed text-gray-500">
+                La respuesta se guarda junto a tus registros y solo es visible para ti y para
+                el profesional de psicología que tú autorices.
+            </p>
 
-            @php
-                $afrontamiento = [
-                    ['name' => 'a_resolucion', 'label' => 'Habilidad para planificar, priorizar y resolver problemas paso a paso.'],
-                    ['name' => 'a_comunicacion', 'label' => 'Búsqueda de apoyo social, diálogo con compañeros o asesoría docente.'],
-                ];
-            @endphp
-
-            <div class="space-y-4">
-                @foreach($afrontamiento as $item)
-                    <div class="p-4 bg-white/[0.02] border border-white/5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-white/20 transition-all">
-                        <p class="text-xs adaptive-title font-medium leading-relaxed md:max-w-xl">
-                            {{ $item['label'] }}
-                        </p>
-                        <div class="flex items-center gap-2 shrink-0">
-                            @for($i = 1; $i <= 5; $i++)
-                                <div class="likert-option">
-                                    <input type="radio"
-                                           id="{{ $item['name'] }}_{{ $i }}"
-                                           name="{{ $item['name'] }}"
-                                           value="{{ $i }}"
-                                           class="sr-only"
-                                           required>
-                                    <label for="{{ $item['name'] }}_{{ $i }}"
-                                           class="h-9 w-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xs font-orbitron cursor-pointer hover:border-white/40 transition-all text-gray-300">
-                                        {{ $i }}
-                                    </label>
-                                </div>
-                            @endfor
-                        </div>
-                    </div>
-                @endforeach
-            </div>
+            <x-boton class="w-full shrink-0 sm:w-auto" icono="check">
+                Guardar mi respuesta
+            </x-boton>
         </div>
-
-        {{-- BOTÓN DE ENVÍO --}}
-        <div class="pt-6 pb-12 flex justify-end">
-            <button type="submit"
-                    style="background-color: var(--neon-accent); color: #000000; box-shadow: 0 0 25px rgba(var(--neon-accent-rgb), 0.4);"
-                    class="w-full md:w-auto font-orbitron text-xs font-black uppercase tracking-[0.2em] px-8 py-4 rounded-2xl hover:bg-white hover:text-black hover:shadow-[0_0_35px_#ffffff] transition-all duration-300 active:scale-95 flex items-center justify-center gap-3 cursor-pointer">
-                <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
-                [ GUARDAR Y CALIBRAR BASE PSICOMÉTRICA ]
-            </button>
-        </div>
-
     </form>
 </div>
 @endsection

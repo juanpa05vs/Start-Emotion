@@ -1,117 +1,114 @@
 @extends('layouts.app')
 
+@section('title', 'Cuentas | S-Emotion')
+
 @section('content')
-<div class="p-8">
-    {{-- ENCABEZADO DE SECTOR --}}
-    <div class="mb-8 flex justify-between items-end">
+<div class="max-w-4xl">
+
+    <div class="mb-7 flex flex-wrap items-end justify-between gap-4">
         <div>
-            <h1 class="font-orbitron text-2xl font-black text-white uppercase tracking-widest">
-                Gestión de <span class="text-neon-rose">Operadores</span>
-            </h1>
-            <div class="flex items-center gap-2 mt-1">
-                <span class="h-[1px] w-8 bg-neon-rose/50"></span>
-                <p class="text-[8px] text-gray-500 uppercase tracking-[0.4em] font-bold">Control de Privilegios de Acceso</p>
-            </div>
+            <h1 class="font-orbitron text-2xl font-bold tracking-tight adaptive-title">Cuentas</h1>
+            <p class="mt-1.5 text-[13px] text-gray-400">
+                Administra el tipo de acceso de cada cuenta y da de baja las que ya no se usen.
+            </p>
         </div>
-        <div class="text-right">
-            <span class="text-[10px] text-gray-600 uppercase font-black tracking-tighter">Total Registros: {{ $usuarios->count() }}</span>
-        </div>
+
+        <p class="text-[12px] text-gray-500">
+            <span class="font-mono text-[15px] text-accent-text">{{ $usuarios->count() }}</span>
+            {{ \Illuminate\Support\Str::plural('cuenta', $usuarios->count()) }}
+        </p>
     </div>
 
-    {{-- TABLA DE DATOS --}}
-    <div class="bg-black/40 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-xl shadow-2xl">
-        <table class="w-full text-left border-collapse">
-            <thead>
-                <tr class="bg-white/5 border-b border-white/10">
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Identidad</th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Contacto / Bio</th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest text-center">Nivel de Acceso</th>
-                    <th class="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest text-right">Acciones</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-white/5">
-                @foreach($usuarios as $user)
-                <tr class="hover:bg-white/[0.02] transition-colors group">
-                    {{-- NOMBRE Y EDAD --}}
-                    <td class="px-6 py-4">
-                        <div class="flex items-center gap-3">
-                            <div class="h-9 w-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-neon-cyan font-black text-xs font-orbitron">
-                                {{ substr($user->nombre, 0, 1) }}
-                            </div>
-                            <div class="flex flex-col">
-                                <span class="text-sm font-bold text-white group-hover:text-neon-cyan transition-colors">{{ $user->nombre }}</span>
-                                <span class="text-[9px] text-gray-500 uppercase">{{ $user->edad }} Años</span>
-                            </div>
-                        </div>
-                    </td>
+    @if ($usuarios->isEmpty())
+        <div class="surface rounded-panel">
+            <x-estado-vacio
+                icono="fa-users"
+                titulo="No hay cuentas registradas"
+                mensaje="Cuando alguien cree una cuenta en la aplicación, aparecerá en esta lista." />
+        </div>
+    @else
+        <div class="overflow-hidden rounded-panel border border-white/10 bg-black/40">
+            <table class="w-full border-collapse text-left">
+                <thead>
+                    <tr class="border-b border-white/10 bg-white/[0.03]">
+                        <th class="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">Cuenta</th>
+                        <th class="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">Tipo de acceso</th>
+                        <th class="px-5 py-3.5 text-right text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">Acciones</th>
+                    </tr>
+                </thead>
 
-                    {{-- CORREO --}}
-                    <td class="px-6 py-4">
-                        <span class="text-xs text-gray-400 font-mono italic">{{ $user->correo }}</span>
-                    </td>
-
-                    {{-- 🛡️ BADGE DE ROL DINÁMICO --}}
-                    <td class="px-6 py-4 text-center">
-                        @php
-                            $rolLimpio = trim(strtolower($user->rol));
-                            $estiloBadge = match($rolLimpio) {
-                                'administrador' => 'border-neon-rose text-neon-rose bg-neon-rose/5 shadow-[0_0_10px_rgba(244,63,94,0.2)]',
-                                'jugador'       => 'border-neon-cyan text-neon-cyan bg-neon-cyan/5',
-                                default         => 'border-gray-600 text-gray-600 bg-gray-600/5'
-                            };
-                        @endphp
-
-                        <span class="inline-block px-3 py-1 border rounded-md text-[8px] font-black uppercase tracking-[0.2em] {{ $estiloBadge }}">
-                            {{ $user->rol ?? 'Invitado' }}
-                        </span>
-                    </td>
-
-                    {{-- ACCIONES: GESTIÓN DE RANGO Y ELIMINACIÓN --}}
-                    <td class="px-6 py-4 text-right">
-                        <div class="flex justify-end items-center gap-4">
-                            {{-- FORMULARIO DE ROL --}}
-                            <form action="{{ route('usuarios.updateRole', $user) }}" method="POST" class="inline">
-                                @csrf
-                                @method('PATCH')
-                                <select name="rol" onchange="this.form.submit()"
-                                        class="bg-black/40 border border-white/10 text-[9px] font-black uppercase tracking-widest rounded-lg px-2 py-1 focus:border-neon-cyan focus:ring-0 transition-all cursor-pointer
-                                        {{ trim(strtolower($user->rol)) == 'administrador' ? 'text-neon-rose border-neon-rose/30' : 'text-neon-cyan border-neon-cyan/30' }}">
-                                    <option value="jugador" {{ trim(strtolower($user->rol)) == 'jugador' ? 'selected' : '' }}>[ Nivel: Jugador ]</option>
-                                    <option value="Administrador" {{ trim(strtolower($user->rol)) == 'administrador' ? 'selected' : '' }}>[ Nivel: ADMIN ]</option>
-                                </select>
-                            </form>
-
-                            {{-- FORMULARIO DE ELIMINACIÓN (Módulo de Baja) --}}
-                            {{-- [INGENIERÍA]: Verificamos que no sea el mismo usuario autenticado --}}
-                            @if(auth()->id() !== $user->id)
-                                <form action="{{ route('usuarios.destroy', $user) }}" method="POST" class="inline"
-                                      onsubmit="return confirm('⚠️ ALERTA DE SISTEMA: ¿Está seguro de purgar permanentemente al operador {{ $user->nombre }}?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                            class="p-2 bg-neon-rose/5 border border-transparent hover:border-neon-rose/50 rounded-lg text-gray-600 hover:text-neon-rose transition-all opacity-40 hover:opacity-100"
-                                            title="Eliminar Operador">
-                                        <i class="fa-solid fa-trash-can text-[10px]"></i>
-                                    </button>
-                                </form>
-                            @else
-                                {{-- Bloqueo visual para la propia cuenta --}}
-                                <div class="p-2 text-gray-800" title="Tu cuenta principal no puede ser purgada">
-                                    <i class="fa-solid fa-user-shield text-[10px]"></i>
+                <tbody class="divide-y divide-white/5">
+                    @foreach ($usuarios as $user)
+                        <tr class="transition-colors hover:bg-white/[0.02]">
+                            {{-- Identidad de la cuenta. Sin edad y sin correo: no hacen falta
+                                 para administrar cuentas y sí describen a la persona. --}}
+                            <td class="px-5 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill border border-white/10 bg-white/5 font-orbitron text-[12px] font-bold text-accent-text">
+                                        {{ mb_strtoupper(mb_substr($user->nombre, 0, 1)) }}
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="truncate text-[14px] font-semibold adaptive-title">{{ $user->nombre }}</p>
+                                        <p class="mt-0.5 text-[11px] text-gray-500">
+                                            Alta el {{ $user->created_at?->format('d/m/Y') }}
+                                        </p>
+                                    </div>
                                 </div>
-                            @endif
-                        </div>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
+                            </td>
 
-    {{-- NOTA TÉCNICA --}}
-    <div class="mt-6 flex items-center gap-2">
-        <div class="h-1 w-1 rounded-full bg-neon-rose animate-pulse"></div>
-        <p class="text-[9px] text-gray-600 uppercase tracking-widest">Aviso: Las modificaciones de rango y bajas de usuario afectan la integridad de los reportes históricos.</p>
-    </div>
+                            {{-- El tipo de acceso es el dato central de esta pantalla, así que el
+                                 formulario de cambio va en la celda y no en un menú aparte. --}}
+                            <td class="px-5 py-4">
+                                <form action="{{ route('usuarios.updateRole', $user) }}" method="POST">
+                                    @csrf
+                                    @method('PATCH')
+                                    <label class="sr-only" for="rol-{{ $user->id }}">
+                                        Tipo de acceso de {{ $user->nombre }}
+                                    </label>
+                                    <select id="rol-{{ $user->id }}"
+                                            name="rol"
+                                            onchange="this.form.submit()"
+                                            class="campo w-full max-w-[13rem] cursor-pointer rounded-control border bg-black/40 px-3 py-2 text-[13px] text-gray-200 hover:border-white/25">
+                                        <option value="estudiante"     {{ trim(strtolower($user->rol ?? '')) === 'estudiante' ? 'selected' : '' }}>Estudiante</option>
+                                        <option value="Psicólogo"      {{ ($user->rol ?? '') === 'Psicólogo' ? 'selected' : '' }}>Psicólogo</option>
+                                        <option value="Administrador"  {{ trim(strtolower($user->rol ?? '')) === 'administrador' ? 'selected' : '' }}>Administrador</option>
+                                    </select>
+                                </form>
+                            </td>
+
+                            <td class="px-5 py-4 text-right">
+                                @if (auth()->id() !== $user->id)
+                                    {{-- Eliminar la cuenta borra también su historial clínico. El aviso va
+                                         en el texto del diálogo, porque `confirm()` es la última línea
+                                         antes de un borrado que no se puede deshacer. --}}
+                                    <form action="{{ route('usuarios.destroy', $user) }}" method="POST" class="inline"
+                                          onsubmit="return confirm('Se eliminará la cuenta de {{ $user->nombre }} junto con todos sus registros, evaluaciones y partidas. Esta acción no se puede deshacer. ¿Continuar?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                                aria-label="Eliminar la cuenta de {{ $user->nombre }}"
+                                                class="inline-flex h-9 w-9 items-center justify-center rounded-control border border-transparent text-gray-600 transition-colors hover:border-neon-rose/40 hover:bg-neon-rose/10 hover:text-neon-rose">
+                                            <i class="fa-solid fa-trash-can text-[11px]" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                @else
+                                    {{-- La propia cuenta no se puede eliminar desde aquí. --}}
+                                    <span class="inline-flex h-9 w-9 items-center justify-center text-gray-700"
+                                          title="No puedes eliminar tu propia cuenta">
+                                        <i class="fa-solid fa-user-shield text-[11px]" aria-hidden="true"></i>
+                                    </span>
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
+
+    <p class="mt-5 text-[12px] leading-relaxed text-gray-500">
+        Cambiar el tipo de acceso no muestra ni oculta registros ya existentes: para ver
+        datos de un estudiante sigue haciendo falta un consentimiento vigente.
+    </p>
 </div>
 @endsection
