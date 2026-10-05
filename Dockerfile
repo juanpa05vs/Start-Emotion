@@ -2,6 +2,11 @@ FROM richarvey/nginx-php-fpm:3.1.6
 
 WORKDIR /var/www/html
 
+# Instalar Node.js y NPM para compilar los assets de Vite
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs
+
+# Copiar el proyecto
 COPY . /var/www/html
 
 # Variables de entorno
@@ -14,12 +19,13 @@ ENV LOG_CHANNEL stderr
 ENV ENABLE_PRESTISSIMO 0
 ENV PORT 80
 
-# Forzar actualización de dependencias compatibles con PHP 8.2 omitiendo bloqueos de plataforma
+# Instalar dependencias de PHP y Node
 RUN composer update --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
+RUN npm install && npm run build
 
-# Permisos
+# Configurar permisos
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Comando de inicio: Limpia caché, ejecuta migraciones en Clever Cloud y arranca el servidor
+# Comando de inicio: Limpia caché, ejecuta migraciones y arranca el servidor
 ENTRYPOINT ["sh", "-c", "php artisan config:clear && php artisan migrate --force && /start.sh"]
