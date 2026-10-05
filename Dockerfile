@@ -17,7 +17,7 @@ COPY . /var/www/html
 # Copiar la carpeta compilada de Vite desde la etapa anterior
 COPY --from=frontend-builder /app/public/build /var/www/html/public/build
 
-# Variables de entorno para Richarvey Nginx
+# Variables de entorno
 ENV WEBROOT /var/www/html/public
 ENV PHP_ERRORS_STDERR 1
 ENV RUN_SCRIPTS 1
@@ -27,8 +27,10 @@ ENV LOG_CHANNEL stderr
 ENV ENABLE_PRESTISSIMO 0
 ENV PORT 80
 
-# Forzar la reescritura de URLs de Nginx para que redirija todas las rutas internas a index.php
-RUN sed -i 's|try_files $uri $uri/ /index.php?$args;|try_files $uri $uri/ /index.php?$query_string;|g' /etc/nginx/sites-available/default.conf || true
+# Sobrescribir las configuraciones por defecto de Nginx con la regla de reescritura de Laravel
+COPY nginx.conf /etc/nginx/sites-available/default.conf
+COPY nginx.conf /etc/nginx/sites-enabled/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Instalar dependencias de PHP
 RUN composer update --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
