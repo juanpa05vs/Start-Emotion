@@ -15,7 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Aquí es donde le damos sentido al "apodo" que usamos en las rutas
+        // Confiar en los proxies de Render para obligar el uso de HTTPS en los formularios
+        $middleware->trustProxies(at: '*');
+
+        // Registro de alias de middlewares personalizados y de Spatie
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
