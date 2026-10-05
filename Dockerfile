@@ -1,12 +1,21 @@
+# --- ETAPA 1: Compilación de Assets con Node 20 ---
+FROM node:20-alpine AS frontend-builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# --- ETAPA 2: Servidor PHP/Nginx para Producción ---
 FROM richarvey/nginx-php-fpm:3.1.6
 
 WORKDIR /var/www/html
 
-# Instalar Node.js y NPM usando apk (gestor de paquetes de Alpine Linux)
-RUN apk add --no-cache nodejs npm
-
-# Copiar el proyecto
+# Copiar el código de la aplicación
 COPY . /var/www/html
+
+# Copiar la carpeta compilada de Vite desde la etapa anterior
+COPY --from=frontend-builder /app/public/build /var/www/html/public/build
 
 # Variables de entorno
 ENV WEBROOT /var/www/html/public
@@ -18,13 +27,12 @@ ENV LOG_CHANNEL stderr
 ENV ENABLE_PRESTISSIMO 0
 ENV PORT 80
 
-# Instalar dependencias de PHP y compilar assets de Vite
+# Instalar dependencias de PHP
 RUN composer update --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
-RUN npm install && npm run build
 
-# Configurar permisos requeridos por Laravel
+# Configurar permisos
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Comando de inicio: Limpia caché de configuración, ejecuta migraciones y arranca el servidor
+# Comando de inicio
 ENTRYPOINT ["sh", "-c", "php artisan config:clear && php artisan migrate --force && /start.sh"]
