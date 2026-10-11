@@ -211,15 +211,15 @@ class ValidacionCientificaController extends Controller
                 foreach ($registros as $row) {
                     fputcsv($handle, [
                         User::codigoParticipante($row->user_id),
-                        $row->minijuego_id,
+                        $this->sanearCSV($row->minijuego_id),
                         $row->latencia_promedio_ms,
                         $row->frecuencia_tapping,
                         $row->tiempo_total_ms,
                         $row->conteo_rectificaciones,
                         $row->errores_diagnostico,
                         $row->score_final,
-                        strtolower((string) $row->emocion_objetivo),
-                        strtolower((string) $row->emocion_predicha),
+                        $this->sanearCSV(strtolower((string) $row->emocion_objetivo)),
+                        $this->sanearCSV(strtolower((string) $row->emocion_predicha)),
                         $row->diagnostico_correcto ? '1' : '0',
                         $row->created_at ? $row->created_at->format('Y-m-d H:i:s') : null,
                     ]);
@@ -228,5 +228,22 @@ class ValidacionCientificaController extends Controller
 
             fclose($handle);
         }, 200, $headers);
+    }
+
+    /**
+     * Neutraliza valores que Excel/Sheets interpretarían como fórmula (CSV
+     * injection): si el valor empieza por =, +, - o @ se prefija con un
+     * apóstrofo para que la hoja de cálculo lo trate como texto y no lo
+     * ejecute. Es la salida de la defensa: aunque un id o una etiqueta
+     * llegase así a la base, este archivo no puede propagar una fórmula.
+     */
+    private function sanearCSV(?string $valor): string
+    {
+        $valor = (string) $valor;
+
+        return $valor !== ''
+            && in_array($valor[0], ['=', '+', '-', '@'], true)
+                ? "'".$valor
+                : $valor;
     }
 }

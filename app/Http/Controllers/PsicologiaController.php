@@ -117,9 +117,12 @@ class PsicologiaController extends Controller
         abort_unless($profesional, 403);
         abort_unless($invitacion->profesional_id === $profesional->id, 403);
 
-        if ($invitacion->usada_en === null) {
-            $invitacion->delete();
+        if ($invitacion->usada_en !== null) {
+            return redirect()->route('psicologia.invitaciones')
+                ->with('error', 'Este código ya se usó, así que no se puede anular. Retira el acceso desde la ficha del consentimiento si lo necesitas.');
         }
+
+        $invitacion->delete();
 
         return redirect()->route('psicologia.invitaciones')
             ->with('success', 'Código anulado.');

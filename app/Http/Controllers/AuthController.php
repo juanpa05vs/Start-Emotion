@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Spatie\Permission\Models\Role;
@@ -161,18 +162,27 @@ class AuthController extends Controller
 
         // 'rol' NO está en $fillable (a propósito: evita asignación masiva de
         // privilegios). Por eso se asigna como propiedad explícita y no en create().
-        $user = new User;
-        $user->nombre = $request->nombre;
-        $user->edad = $request->edad;
-        $user->correo = $request->correo;
-        $user->password = Hash::make($request->contrasena);
-        $user->rol = $rolFinal;
-        $user->save();
+        //
+        // La cuenta y su rol se crean en la MISMA transacción: si la asignación
+        // spatie falla, no queda una cuenta huérfana sin rol (y a la inversa).
+        // El login es posterior y queda fuera: no es una escritura que deba
+        // revertirse con la creación.
+        $user = DB::transaction(function () use ($request, $rolFinal) {
+            $user = new User;
+            $user->nombre = $request->nombre;
+            $user->edad = $request->edad;
+            $user->correo = $request->correo;
+            $user->password = Hash::make($request->contrasena);
+            $user->rol = $rolFinal;
+            $user->save();
 
-        if (method_exists($user, 'assignRole')) {
-            // Se crea el rol si aún no existe (evita un 500 si falta ejecutar db:seed).
-            $user->assignRole(Role::findOrCreate($rolFinal, 'web'));
-        }
+            if (method_exists($user, 'assignRole')) {
+                // Se crea el rol si aún no existe (evita un 500 si falta ejecutar db:seed).
+                $user->assignRole(Role::findOrCreate($rolFinal, 'web'));
+            }
+
+            return $user;
+        });
 
         Auth::login($user);
 

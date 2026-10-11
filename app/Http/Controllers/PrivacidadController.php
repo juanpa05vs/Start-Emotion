@@ -8,6 +8,7 @@ use App\Models\InvitacionPsicologo;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -91,27 +92,51 @@ class PrivacidadController extends Controller
             return back()->withErrors(['codigo' => 'Ese código no corresponde a un profesional.']);
         }
 
-        // Si reconecta con el mismo profesional, se actualiza el alcance en vez
-        // de acumular filas: "lo que comparto" es una respuesta, no un registro.
-        $existente = Consentimiento::vigenteEntre($user->id, $invitacion->profesional_id);
-
         $alcance = array_map(fn ($c) => $c->value, AlcanceConsentimiento::desdeEntrada($request->alcance));
 
-        if ($existente) {
-            $existente->alcance = $alcance;
-            $existente->save();
-        } else {
-            $nuevo = new Consentimiento;
-            $nuevo->alcance = $alcance;
-            $nuevo->estudiante_id = $user->id;
-            $nuevo->profesional_id = $invitacion->profesional_id;
-            $nuevo->otorgado_en = now();
-            $nuevo->save();
-        }
+        // El canje es atómico: dentro de la transacción se bloquea la fila de la
+        // invitación y se vuelve a comprobar que sigue vigente. Así, dos
+        // peticiones simultáneas con el mismo código no pueden consumirlo ni
+        // crear el consentimiento dos veces (antes había una condición de
+        // carrera entre validar y guardar).
+        $canjeado = DB::transaction(function () use ($user, $invitacion, $alcance) {
+            $invitacion = InvitacionPsicologo::query()
+                ->whereKey($invitacion->getKey())
+                ->lockForUpdate()
+                ->first();
 
-        $invitacion->usada_en = now();
-        $invitacion->usada_por = $user->id;
-        $invitacion->save();
+            if (! $invitacion || ! $invitacion->estaVigente()) {
+                return false;
+            }
+
+            // Si reconecta con el mismo profesional, se actualiza el alcance en vez
+            // de acumular filas: "lo que comparto" es una respuesta, no un registro.
+            $existente = Consentimiento::vigenteEntre($user->id, $invitacion->profesional_id);
+
+            if ($existente) {
+                $existente->alcance = $alcance;
+                $existente->save();
+            } else {
+                $nuevo = new Consentimiento;
+                $nuevo->alcance = $alcance;
+                $nuevo->estudiante_id = $user->id;
+                $nuevo->profesional_id = $invitacion->profesional_id;
+                $nuevo->otorgado_en = now();
+                $nuevo->save();
+            }
+
+            $invitacion->usada_en = now();
+            $invitacion->usada_por = $user->id;
+            $invitacion->save();
+
+            return true;
+        });
+
+        if (! $canjeado) {
+            return back()->withErrors([
+                'codigo' => 'Ese código ya fue utilizado. Pídele uno nuevo a tu profesional.',
+            ]);
+        }
 
         return redirect()->route('privacidad.index')
             ->with('success', 'Listo. Tu profesional ya puede ver lo que elegiste compartir.');

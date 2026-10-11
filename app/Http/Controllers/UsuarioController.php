@@ -6,6 +6,7 @@ use App\Models\Feedback;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -61,12 +62,19 @@ class UsuarioController extends Controller
                 $request->rol === 'Psicólogo' => 'Psicólogo',
                 default => 'estudiante',
             };
-            $user->rol = $nuevoRol;
-            $user->save();
 
-            if (method_exists($user, 'syncRoles')) {
-                $user->syncRoles([$nuevoRol]);
-            }
+            // Las dos fuentes de verdad del rol (la columna `rol` y la tabla
+            // spatie `model_has_roles`) se escriben en la MISMA transacción:
+            // si la segunda falla, la primera se revierte y la cuenta nunca
+            // queda a medias con un rol que el sistema ya no reconoce.
+            DB::transaction(function () use ($user, $nuevoRol) {
+                $user->rol = $nuevoRol;
+                $user->save();
+
+                if (method_exists($user, 'syncRoles')) {
+                    $user->syncRoles([$nuevoRol]);
+                }
+            });
 
             return redirect()->route('usuarios.index')->with('success', 'Rol actualizado.');
         } catch (\Exception $e) {
@@ -168,7 +176,7 @@ class UsuarioController extends Controller
         $authUser = Auth::user();
 
         if (! $authUser || ! $authUser->esAdmin()) {
-            return abort(403);
+            abort(403);
         }
 
         $feedback->delete();
@@ -182,7 +190,7 @@ class UsuarioController extends Controller
         $authUser = Auth::user();
 
         if (! $authUser || ! $authUser->esAdmin()) {
-            return abort(403);
+            abort(403);
         }
 
         $feedback->estado = 'resuelto';

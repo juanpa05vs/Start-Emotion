@@ -82,8 +82,14 @@ Route::middleware(['auth'])->group(function () {
         // comparte. Solo tiene sentido para quien tiene algo que compartir, y
         // el administrador no se conecta a ningún profesional.
         Route::get('/mi-privacidad', [PrivacidadController::class, 'index'])->name('privacidad.index');
-        Route::post('/mi-privacidad/conectar', [PrivacidadController::class, 'conectar'])->name('privacidad.conectar');
+        // 10 intentos/min: los códigos de invitación se pueden probar por fuerza
+        // bruta y cada acierto crea un consentimiento, así que este endpoint no
+        // puede quedar sin límite.
+        Route::post('/mi-privacidad/conectar', [PrivacidadController::class, 'conectar'])
+            ->middleware('throttle:10,1')
+            ->name('privacidad.conectar');
         Route::post('/mi-privacidad/consentimientos/{consentimiento}/revocar', [PrivacidadController::class, 'revocar'])
+            ->middleware('throttle:10,1')
             ->name('privacidad.revocar');
     });
 
@@ -100,20 +106,28 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:Psicólogo'])->group(function () {
         Route::get('/psicologia/pacientes', [PsicologiaController::class, 'pacientes'])->name('psicologia.pacientes');
         Route::get('/psicologia/invitaciones', [PsicologiaController::class, 'invitaciones'])->name('psicologia.invitaciones');
-        Route::post('/psicologia/invitaciones', [PsicologiaController::class, 'crearInvitacion'])->name('psicologia.invitaciones.crear');
-        Route::delete('/psicologia/invitaciones/{invitacion}', [PsicologiaController::class, 'revocarInvitacion'])->name('psicologia.invitaciones.revocar');
+        Route::post('/psicologia/invitaciones', [PsicologiaController::class, 'crearInvitacion'])
+            ->middleware('throttle:10,1')
+            ->name('psicologia.invitaciones.crear');
+        Route::delete('/psicologia/invitaciones/{invitacion}', [PsicologiaController::class, 'revocarInvitacion'])
+            ->middleware('throttle:10,1')
+            ->name('psicologia.invitaciones.revocar');
         Route::get('/psicologia/pacientes/{consentimiento}', [PsicologiaController::class, 'paciente'])->name('psicologia.paciente');
     });
 
     // Perfil
     Route::get('/configuracion', [UsuarioController::class, 'configuracion'])->name('perfil.config');
     Route::patch('/perfil/update', [UsuarioController::class, 'updatePerfil'])->name('perfil.update');
-    Route::post('/perfil/feedback', [UsuarioController::class, 'storeFeedback'])->name('perfil.feedback');
+    Route::post('/perfil/feedback', [UsuarioController::class, 'storeFeedback'])
+        ->middleware('throttle:10,1')
+        ->name('perfil.feedback');
 
     // Admin
     Route::middleware(['role:Administrador'])->group(function () {
         Route::resource('usuarios', UsuarioController::class)->only(['index', 'destroy']);
-        Route::patch('/usuarios/{user}/rol', [UsuarioController::class, 'updateRole'])->name('usuarios.updateRole');
+        Route::patch('/usuarios/{user}/rol', [UsuarioController::class, 'updateRole'])
+            ->middleware('throttle:60,1')
+            ->name('usuarios.updateRole');
         Route::get('/admin/feedback', [UsuarioController::class, 'verFeedback'])->name('admin.feedback');
         Route::delete('/admin/feedback/{feedback}', [UsuarioController::class, 'destroyFeedback'])->name('feedback.destroy');
         Route::patch('/admin/feedback/{feedback}/status', [UsuarioController::class, 'updateFeedbackStatus'])->name('feedback.updateStatus');
