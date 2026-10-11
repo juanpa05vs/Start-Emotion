@@ -1,0 +1,299 @@
+<mxfile host="app.diagrams.net" agent="opencode-plantuml-export" version="24.7.17" type="device">
+  <diagram id="bayes-clases" name="1 · Clases">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="titulo" value="Start-Emotion &#8212; Clasificador Bayesiano Gaussiano (Gaussian Naive Bayes)&#10;app/Services/Bayes &#183; PHP 8.2 &#183; Laravel 11 &#183; reemplaza al RandomForestService" style="text;html=1;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#073642;" vertex="1" parent="1">
+          <mxGeometry x="40" y="10" width="1500" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pkg-soporte" value="app/Enums &#183; app/Models &#183; config" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=center;fontStyle=1;fillColor=#FFFDF5;strokeColor=#93A1A1;fontColor=#073642;fontSize=12;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="70" width="1500" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="pkg-bayes" value="app/Services/Bayes" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=center;fontStyle=1;fillColor=#FFFDF5;strokeColor=#B58900;fontColor=#073642;fontSize=12;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="330" width="1500" height="420" as="geometry" />
+        </mxCell>
+        <mxCell id="pkg-cmd" value="app/Console/Commands" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=center;fontStyle=1;fillColor=#FFF8E1;strokeColor=#93A1A1;fontColor=#073642;fontSize=12;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="780" width="1500" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="pkg-ctrl" value="app/Http/Controllers" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=center;fontStyle=1;fillColor=#F1F8F2;strokeColor=#93A1A1;fontColor=#073642;fontSize=12;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1040" width="1500" height="260" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c-emocion" value="&lt;table border=&quot;0&quot; cellPadding=&quot;0&quot; cellSpacing=&quot;0&quot; style=&quot;border-collapse:collapse;width:100%;&quot;&gt;&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;background-color:#FDF6E3;&quot;&gt;&lt;b&gt;EmocionEnum&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;&amp;lt;&amp;lt;enum&amp;gt;&amp;gt;&lt;/font&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td align=&quot;left&quot; style=&quot;border-top:1px solid #B58900;padding:6px;font-size:11px;&quot;&gt;&lt;i&gt;{static}&lt;/i&gt; bayes() : string[]&lt;br&gt;&lt;i&gt;{static}&lt;/i&gt; etiqueta(v) : string&lt;br&gt;&lt;i&gt;{static}&lt;/i&gt; normalizarParaRF(v) : ?string&lt;hr&gt;&lt;b&gt;bayes() devuelve el MISMO conjunto de 5&lt;br&gt;clases que rf() y validacion():&lt;br&gt;alegria, tristeza, ansiedad, frustracion, neutralidad.&lt;/b&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#B58900;fillColor=none;verticalAlign=middle;" vertex="1" parent="pkg-soporte">
+          <mxGeometry x="20" y="40" width="460" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="c-telemetria" value="&lt;table border=&quot;0&quot; cellPadding=&quot;0&quot; cellSpacing=&quot;0&quot; style=&quot;border-collapse:collapse;width:100%;&quot;&gt;&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;background-color:#FDF6E3;&quot;&gt;&lt;b&gt;TelemetriaGameplay&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;&amp;lt;&amp;lt;Model&amp;gt;&amp;gt;&lt;/font&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td align=&quot;left&quot; style=&quot;border-top:1px solid #B58900;padding:6px;font-size:11px;&quot;&gt;+ latencia_promedio_ms : decimal&lt;br&gt;+ frecuencia_tapping : decimal&lt;br&gt;+ tiempo_total_ms : int&lt;br&gt;+ conteo_rectificaciones : int&lt;br&gt;+ score_final : int&lt;br&gt;+ emocion_objetivo : string&lt;br&gt;+ emocion_predicha : string&lt;br&gt;+ diagnostico_correcto : bool&lt;br&gt;+ vector_caracteristicas : json&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#B58900;fillColor=none;" vertex="1" parent="pkg-soporte">
+          <mxGeometry x="520" y="40" width="460" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="c-config" value="&lt;table border=&quot;0&quot; cellPadding=&quot;0&quot; cellSpacing=&quot;0&quot; style=&quot;border-collapse:collapse;width:100%;&quot;&gt;&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;background-color:#FDF6E3;&quot;&gt;&lt;b&gt;bayes.php&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;&amp;lt;&amp;lt;config&amp;gt;&amp;gt;&lt;/font&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td align=&quot;left&quot; style=&quot;border-top:1px solid #B58900;padding:6px;font-size:11px;&quot;&gt;+ features : array[5]&lt;br&gt;+ variance_floor : float&lt;br&gt;+ alpha : float&lt;br&gt;+ min_muestras_por_clase : int&lt;br&gt;+ priors_por_defecto : array&lt;br&gt;+ ruta_modelo : string&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#B58900;fillColor=none;" vertex="1" parent="pkg-soporte">
+          <mxGeometry x="1020" y="40" width="460" height="170" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c-features" value="&lt;table border=&quot;0&quot; cellPadding=&quot;0&quot; cellSpacing=&quot;0&quot; style=&quot;border-collapse:collapse;width:100%;&quot;&gt;&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;background-color:#FDF6E3;&quot;&gt;&lt;b&gt;FeatureRegistry&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;&amp;lt;&amp;lt;value object&amp;gt;&amp;gt;&lt;/font&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td align=&quot;left&quot; style=&quot;border-top:1px solid #B58900;padding:6px;font-size:11px;&quot;&gt;&lt;b&gt;+ {static}&lt;/b&gt; desdeConfig() : self&lt;br&gt;&lt;b&gt;+&lt;/b&gt; caracteristicas() : array&lt;br&gt;&lt;b&gt;+&lt;/b&gt; mapearVectorPosicional(v) : array&lt;br&gt;&lt;b&gt;+&lt;/b&gt; asegurar(v) : void&lt;hr&gt;&lt;i&gt;- registry = config(&#39;bayes.features&#39;)&lt;/i&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#B58900;fillColor=none;" vertex="1" parent="pkg-bayes">
+          <mxGeometry x="20" y="40" width="330" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="c-model" value="&lt;table border=&quot;0&quot; cellPadding=&quot;0&quot; cellSpacing=&quot;0&quot; style=&quot;border-collapse:collapse;width:100%;&quot;&gt;&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;background-color:#FDF6E3;&quot;&gt;&lt;b&gt;BayesModel&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;&amp;lt;&amp;lt;artefacto serializable&amp;gt;&amp;gt;&lt;/font&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td align=&quot;left&quot; style=&quot;border-top:1px solid #B58900;padding:6px;font-size:11px;&quot;&gt;&lt;i&gt;- priors&lt;/i&gt; : array&lt;c, float&gt;&lt;br&gt;&lt;i&gt;- mu&lt;/i&gt; : array&lt;c, array&lt;f,float&gt;&gt;&lt;br&gt;&lt;i&gt;- sigma&lt;/i&gt; : array&lt;c, array&lt;f,float&gt;&gt;&lt;br&gt;&lt;i&gt;- metadatos&lt;/i&gt; : array&lt;hr&gt;&lt;b&gt;+&lt;/b&gt; clases() : string[]&lt;br&gt;&lt;b&gt;+&lt;/b&gt; aArray() / desdeArray()&lt;br&gt;&lt;b&gt;+&lt;/b&gt; guardar(ruta) / {static} cargar(ruta)&lt;br&gt;&lt;b&gt;+&lt;/b&gt; fingerprint() : string&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#B58900;fillColor=none;" vertex="1" parent="pkg-bayes">
+          <mxGeometry x="380" y="40" width="340" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="c-trainer" value="&lt;table border=&quot;0&quot; cellPadding=&quot;0&quot; cellSpacing=&quot;0&quot; style=&quot;border-collapse:collapse;width:100%;&quot;&gt;&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;background-color:#FDF6E3;&quot;&gt;&lt;b&gt;BayesTrainer&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;&amp;lt;&amp;lt;entrenamiento&amp;gt;&amp;gt;&lt;/font&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td align=&quot;left&quot; style=&quot;border-top:1px solid #B58900;padding:6px;font-size:11px;&quot;&gt;&lt;i&gt;- clases&lt;/i&gt; : string[]&lt;hr&gt;&lt;b&gt;+&lt;/b&gt; entrenar(?minPorClase) : BayesModel&lt;br&gt;&lt;b&gt;+&lt;/b&gt; metricasSobre(muestras, modelo) : array&lt;hr&gt;&lt;i&gt;- agregarAcumuladores(filas)&lt;/i&gt;&lt;br&gt;&lt;i&gt;- calcularSigma(mu, sumaSq, n)&lt;/i&gt;&lt;br&gt;&lt;i&gt;- fusionarConPriors(modelo)&lt;/i&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#B58900;fillColor=none;" vertex="1" parent="pkg-bayes">
+          <mxGeometry x="750" y="40" width="350" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="c-clf" value="&lt;table border=&quot;0&quot; cellPadding=&quot;0&quot; cellSpacing=&quot;0&quot; style=&quot;border-collapse:collapse;width:100%;&quot;&gt;&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;background-color:#FDF6E3;&quot;&gt;&lt;b&gt;BayesNaiveClassifier&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;&amp;lt;&amp;lt;n&amp;#250acute;cleo de inferencia&amp;gt;&amp;gt;&lt;/font&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td align=&quot;left&quot; style=&quot;border-top:1px solid #B58900;padding:6px;font-size:11px;&quot;&gt;&lt;i&gt;- modelo : BayesModel&lt;/i&gt;&lt;br&gt;&lt;i&gt;- features : FeatureRegistry&lt;/i&gt;&lt;br&gt;&lt;i&gt;- varianceFloor : float&lt;/i&gt;&lt;hr&gt;&lt;b&gt;+ {static}&lt;/b&gt; entrenarDesdeBd(n) : self&lt;br&gt;&lt;b&gt;+&lt;/b&gt; predecir(vector) : BayesResultado&lt;br&gt;&lt;b&gt;+&lt;/b&gt; probabilidades(vector) : array&lt;br&gt;&lt;b&gt;+&lt;/b&gt; logScores(vector) : array&lt;hr&gt;&lt;i&gt;- logVerosimilitudGaussiana(x, &amp;mu;, &amp;sigma;)&lt;/i&gt;&lt;br&gt;&lt;i&gt;- logSumExp(logs) : float&lt;/i&gt;&lt;br&gt;&lt;i&gt;- aplicarPisoSigma(&amp;sigma;) : float&lt;/i&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#B58900;fillColor=none;strokeWidth=2;" vertex="1" parent="pkg-bayes">
+          <mxGeometry x="1130" y="40" width="350" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="c-resultado" value="&lt;table border=&quot;0&quot; cellPadding=&quot;0&quot; cellSpacing=&quot;0&quot; style=&quot;border-collapse:collapse;width:100%;&quot;&gt;&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;background-color:#FDF6E3;&quot;&gt;&lt;b&gt;BayesResultado&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;&amp;lt;&amp;lt;DTO de salida&amp;gt;&amp;gt;&lt;/font&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td align=&quot;left&quot; style=&quot;border-top:1px solid #B58900;padding:6px;font-size:11px;&quot;&gt;+ prediccion : string&lt;br&gt;+ confianza : float&lt;br&gt;+ probabilidades : array&lt;c,float&gt;&lt;br&gt;+ logScores : array&lt;c,float&gt;&lt;br&gt;+ vectorEntrada : array&lt;f,float&gt;&lt;hr&gt;&lt;b&gt;+&lt;/b&gt; aArray() : array&lt;br&gt;&lt;b&gt;+&lt;/b&gt; etiqueta() : string&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#B58900;fillColor=none;" vertex="1" parent="pkg-bayes">
+          <mxGeometry x="150" y="230" width="350" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="c-repo" value="&lt;table border=&quot;0&quot; cellPadding=&quot;0&quot; cellSpacing=&quot;0&quot; style=&quot;border-collapse:collapse;width:100%;&quot;&gt;&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;background-color:#FDF6E3;&quot;&gt;&lt;b&gt;BayesModelRepository&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;&amp;lt;&amp;lt;persistencia versionada&amp;gt;&amp;gt;&lt;/font&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td align=&quot;left&quot; style=&quot;border-top:1px solid #B58900;padding:6px;font-size:11px;&quot;&gt;&lt;i&gt;- ruta, dirRespaldo&lt;/i&gt;&lt;hr&gt;&lt;b&gt;+&lt;/b&gt; existe() : bool&lt;br&gt;&lt;b&gt;+&lt;/b&gt; cargar() : BayesModel&lt;br&gt;&lt;b&gt;+&lt;/b&gt; guardar(modelo) : void&lt;br&gt;&lt;b&gt;+&lt;/b&gt; listarVersiones() : string[]&lt;br&gt;&lt;b&gt;+&lt;/b&gt; borrar() : void&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#B58900;fillColor=none;" vertex="1" parent="pkg-bayes">
+          <mxGeometry x="650" y="230" width="350" height="150" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c-cmd" value="&lt;table border=&quot;0&quot; cellPadding=&quot;0&quot; cellSpacing=&quot;0&quot; style=&quot;border-collapse:collapse;width:100%;&quot;&gt;&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;background-color:#FFF8E1;&quot;&gt;&lt;b&gt;EntrenarBayesCommand&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;&amp;lt;&amp;lt;command&amp;gt;&amp;gt;&lt;/font&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td align=&quot;left&quot; style=&quot;border-top:1px solid #93A1A1;padding:6px;font-size:11px;&quot;&gt;&lt;b&gt;+&lt;/b&gt; handle() : int&lt;hr&gt;php artisan bayes:entrenar&lt;br&gt;&amp;nbsp;&amp;nbsp;--min-por-clase=N&lt;br&gt;&amp;nbsp;&amp;nbsp;--forzar&lt;br&gt;&amp;nbsp;&amp;nbsp;--evaluar&lt;hr&gt;&lt;b&gt;Nunca se ejecuta en una partida.&lt;/b&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#93A1A1;fillColor=none;" vertex="1" parent="pkg-cmd">
+          <mxGeometry x="20" y="40" width="460" height="170" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c-diag" value="&lt;table border=&quot;0&quot; cellPadding=&quot;0&quot; cellSpacing=&quot;0&quot; style=&quot;border-collapse:collapse;width:100%;&quot;&gt;&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;background-color:#F1F8F2;&quot;&gt;&lt;b&gt;DiagnosticoController&lt;/b&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td align=&quot;left&quot; style=&quot;border-top:1px solid #93A1A1;padding:6px;font-size:11px;&quot;&gt;&lt;b&gt;+&lt;/b&gt; guardarTelemetria(Request) : JsonResponse&lt;hr&gt;&lt;i&gt;- cliente : navegador del minijuego&lt;/i&gt;&lt;br&gt;&lt;i&gt;- vector[5] llega ya validado&lt;/i&gt;&lt;br&gt;&lt;b&gt;&#220;nico cambio: l&#237;nea 63&lt;/b&gt;&lt;br&gt;&amp;nbsp;$this-&gt;rfService-&gt;predecir(...).&lt;br&gt;&amp;nbsp;&#8594; $this-&gt;bayes-&gt;predecir(...)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#93A1A1;fillColor=none;" vertex="1" parent="pkg-ctrl">
+          <mxGeometry x="20" y="40" width="470" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="c-val" value="&lt;table border=&quot;0&quot; cellPadding=&quot;0&quot; cellSpacing=&quot;0&quot; style=&quot;border-collapse:collapse;width:100%;&quot;&gt;&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;background-color:#F1F8F2;&quot;&gt;&lt;b&gt;ValidacionCientificaController&lt;/b&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td align=&quot;left&quot; style=&quot;border-top:1px solid #93A1A1;padding:6px;font-size:11px;&quot;&gt;&lt;b&gt;+&lt;/b&gt; index() : View&lt;br&gt;&lt;b&gt;+&lt;/b&gt; exportarCSV() : StreamedResponse&lt;hr&gt;&lt;b&gt;Solo agregados.&lt;/b&gt; Nunca carga&lt;br&gt;user_id ni enumera filas por persona.&lt;hr&gt;&lt;b&gt;No cambia de m&#233;tricas:&lt;/b&gt; lee las mismas&lt;br&gt;columnas. Ahora las predicciones&lt;br&gt;est&#225;n aprendidas, no escritas a mano,&lt;br&gt;as&#237; que la matriz de confusi&#243;n informa&lt;br&gt;algo real.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#93A1A1;fillColor=none;" vertex="1" parent="pkg-ctrl">
+          <mxGeometry x="520" y="40" width="470" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="c-rf" value="&lt;table border=&quot;0&quot; cellPadding=&quot;0&quot; cellSpacing=&quot;0&quot; style=&quot;border-collapse:collapse;width:100%;&quot;&gt;&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;background-color:#FFE8E8;&quot;&gt;&lt;b&gt;RandomForestService&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;&amp;lt;&amp;lt;RETIRADO&amp;gt;&amp;gt;&lt;/font&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td align=&quot;left&quot; style=&quot;border-top:1px solid #CC6666;padding:6px;font-size:11px;&quot;&gt;&lt;b&gt;+&lt;/b&gt; predecir(vector) : array&lt;hr&gt;&lt;b&gt;&#9888; BORRAR en el mismo commit&lt;/b&gt;&lt;br&gt;&#8226; RandomForestService.php&lt;br&gt;&#8226; tests/Unit/RandomForestServiceTest.php&lt;br&gt;&#8226; l&#237;nea 63 de DiagnosticoController&lt;br&gt;&lt;br&gt;Los 5 &#225;rboles escritos a mano se&lt;br&gt;reemplazan por P(clase|x) aprendida de&lt;br&gt;telemetria_gameplay.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#CC6666;fillColor=none;dashed=1;" vertex="1" parent="pkg-ctrl">
+          <mxGeometry x="1020" y="40" width="460" height="190" as="geometry" />
+        </mxCell>
+
+        <mxCell id="n-inferencia" value="&lt;b&gt;INFERENCIA&#160;&#8212;&#160;en cada partida&lt;/b&gt;&lt;br&gt;&lt;br&gt;1. FeatureRegistry::mapearVectorPosicional()&lt;br&gt;&#160;&#160;[500, 2.0, 20000, 0, 95] &#8594; {latencia: 500, tapping: 2.0, ...}&lt;br&gt;&lt;br&gt;2. Para cada clase C en 5 clases:&lt;br&gt;&#160;&#160;logScorer(C) = log P(C) + &#8721;&#7522; log N(x&#7522; | &#956;&#7522;,C, &#963;&#7522;,C)&lt;br&gt;&#160;&#160;log N(x | &#956;, &#963;) = &#8722;ln(&#963;&#183;&#8730;2&#960;) &#8722; (x&#8722;&#956;)&#178; / (2&#963;&#178;)&lt;br&gt;&lt;br&gt;3. Normalizaci&#243;n con log-sum-exp:&lt;br&gt;&#160;&#160;Z = logsumExp({logScorer(C)})&lt;br&gt;&#160;&#160;P(C|x) = exp(logScorer(C) &#8722; Z)&#160;&#160;&#8594;&#160;suma 1.0 por construcci&#243;n&lt;br&gt;&lt;br&gt;4. pred = argmax P(C|x)&#160;&#160;&#8226;&#160;&#160;confianza = P(argmax|x)&#215;100&lt;br&gt;&lt;br&gt;&#963; se acota por config(&#39;bayes.variance_floor&#39;) para que &#963; &#8594; 0 no produzca divisi&#243;n por cero." style="shape=note;whiteSpace=wrap;html=1;size=16;align=left;verticalAlign=top;fillColor=#EEE8D5;strokeColor=#93A1A1;fontColor=#073642;fontSize=11;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1330" width="730" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="n-entrenamiento" value="&lt;b&gt;ENTRENAMIENTO&#160;&#8212;&#160;solo a mano&lt;/b&gt;&lt;br&gt;&lt;br&gt;&#8226; Una sola pasada sobre telemetria_gameplay.&lt;br&gt;&#8226; Solo se leen las 6 columnas del modelo. La consulta&lt;br&gt;&#160;&#160;NO incluye user_id, as&#237; que el conjunto de&lt;br&gt;&#160;&#160;entrenamiento no puede identificar a nadie.&lt;b&gt;Verosimilitud por clase&lt;/b&gt; (Gaussiana):&lt;br&gt;&#160;&#160;&#956;&#7522;,C&#160;&#160;= (1/N_c) &#8721; x&#7522;&lt;br&gt;&#160;&#160;&#963;&#178;&#7522;,C = (1/N_c) &#8721; (x&#7522; &#8722; &#956;&#7522;,C)&#178;&lt;br&gt;&#160;&#160;&lt;i&gt;(Piso de 1/N_c, no 1/(N_c&#8722;1): el modelo no&lt;/i&gt;&lt;br&gt;&#160;&#160;&lt;i&gt;estima varianza, solo likelihood.)&lt;/i&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;Priors con suavizado aditivo&lt;/b&gt; (Laplace, &#945;):&lt;br&gt;&#160;&#160;P(C) = (N_c + &#945;) / (N + &#945;&#183;K)&#160;&#160;K = 5 clases&lt;br&gt;&lt;br&gt;&lt;b&gt;DEGRADACI&#211;N SEGURA&lt;/b&gt;&lt;br&gt;Si una clase tiene &amp;lt; min_muestras_por_clase, sus &#956;/&#963;&lt;br&gt;y su prior NO se tocan: se conservan los de config. Una&lt;br&gt;clase escasa no puede vaciar el modelo. El panel lo&lt;br&gt;anuncia en metadatos[&#39;clases_debilitadas&#39;]; no hay&lt;br&gt;degradaci&#243;n silenciosa." style="shape=note;whiteSpace=wrap;html=1;size=16;align=left;verticalAlign=top;fillColor=#EEE8D5;strokeColor=#93A1A1;fontColor=#073642;fontSize=11;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="800" y="1330" width="740" height="250" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;strokeColor=#073642;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.25;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-features" target="c-config">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;strokeColor=#073642;exitX=0.25;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-trainer" target="c-config">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="agrega&#160;(SELECT features&#10;+ emocion_objetivo&#10;&#8212; sin user_id &#8212;)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;strokeColor=#073642;fontSize=10;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-trainer" target="c-telemetria">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;strokeColor=#073642;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=0.85;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-trainer" target="c-emocion">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="produce" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#073642;fontSize=10;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-trainer" target="c-model">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;strokeColor=#073642;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-model" target="c-features">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeColor=#073642;fontSize=10;exitX=1;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-clf" target="c-model">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeColor=#073642;fontSize=10;exitX=0;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-clf" target="c-features">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" value="produce" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#073642;fontSize=10;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-clf" target="c-resultado">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" value="persiste" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#073642;fontSize=10;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-repo" target="c-model">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;strokeColor=#073642;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-cmd" target="c-trainer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" value="guarda / versiona" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;strokeColor=#073642;fontSize=10;exitX=0;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-cmd" target="c-repo">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;strokeColor=#073642;exitX=0;exitY=1;exitDx=0;exitDy=0;entryX=0.2;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-cmd" target="c-telemetria">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" value="predecir(vector)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#073642;fontSize=10;exitX=0.25;exitY=0;exitDx=0;exitDy=0;entryX=0.25;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-diag" target="c-clf">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" value="persiste partida" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;strokeColor=#073642;fontSize=10;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-diag" target="c-telemetria">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;strokeColor=#073642;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-diag" target="c-emocion">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e17" value="agregados" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;strokeColor=#073642;fontSize=10;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.8;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-val" target="c-telemetria">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;strokeColor=#073642;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-val" target="c-emocion">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e19" value="lo reemplaza" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;dashed=1;strokeColor=#CC6666;fontSize=10;fontStyle=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="c-rf" target="c-diag">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="bayes-secuencia" name="2 · Secuencia">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="s0" />
+        <mxCell id="s1" parent="s0" />
+
+        <mxCell id="sw-entr" value="FASE 1 &#183; ENTRENAMIENTO &#8212; php artisan bayes:entrenar" style="swimlane;horizontal=1;whiteSpace=wrap;html=1;startSize=28;fillColor=#FFF8E1;strokeColor=#93A1A1;verticalAlign=middle;fontStyle=1;fontColor=#073642;" vertex="1" parent="s1">
+          <mxGeometry x="40" y="70" width="1520" height="380" as="geometry" />
+        </mxCell>
+        <mxCell id="sw-inf" value="FASE 2 &#183; INFERENCIA &#8212; en vivo, en cada partida" style="swimlane;horizontal=1;whiteSpace=wrap;html=1;startSize=28;fillColor=#F1F8F2;strokeColor=#93A1A1;verticalAlign=middle;fontStyle=1;fontColor=#073642;" vertex="1" parent="s1">
+          <mxGeometry x="40" y="490" width="1520" height="420" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a-op" value="Operador de la investigaci&#243;n" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#EEE8D5;strokeColor=#93A1A1;" vertex="1" parent="sw-entr">
+          <mxGeometry x="60" y="90" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="a-cmd" value="EntrenarBayesCommand" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#EEE8D5;strokeColor=#93A1A1;" vertex="1" parent="sw-entr">
+          <mxGeometry x="200" y="90" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="a-tr" value="BayesTrainer" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#EEE8D5;strokeColor=#93A1A1;" vertex="1" parent="sw-entr">
+          <mxGeometry x="350" y="90" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="a-fr" value="FeatureRegistry" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#EEE8D5;strokeColor=#93A1A1;" vertex="1" parent="sw-entr">
+          <mxGeometry x="500" y="90" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="a-db" value="TelemetriaGameplay" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;whiteSpace=wrap;html=1;size=10;fillColor=#EEE8D5;strokeColor=#93A1A1;" vertex="1" parent="sw-entr">
+          <mxGeometry x="650" y="80" width="40" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="a-en" value="EmocionEnum" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#EEE8D5;strokeColor=#93A1A1;" vertex="1" parent="sw-entr">
+          <mxGeometry x="800" y="90" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="a-mo" value="BayesModel" style="shape=note;whiteSpace=wrap;html=1;size=12;fillColor=#FDF6E3;strokeColor=#B58900;" vertex="1" parent="sw-entr">
+          <mxGeometry x="950" y="90" width="40" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="a-repo" value="BayesModelRepository" style="shape=note;whiteSpace=wrap;html=1;size=12;fillColor=#FDF6E3;strokeColor=#B58900;" vertex="1" parent="sw-entr">
+          <mxGeometry x="1100" y="90" width="40" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="m1" value="bayes:entrenar&#160;--min-por-clase&#160;--evaluar" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#073642;fontSize=11;verticalAlign=bottom;" edge="1" parent="sw-entr" source="a-op" target="a-cmd">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m2" value="new BayesTrainer(clases)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#073642;fontSize=11;verticalAlign=bottom;" edge="1" parent="sw-entr" source="a-cmd" target="a-tr">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m3" value="desdeConfig()" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#073642;fontSize=11;verticalAlign=bottom;" edge="1" parent="sw-entr" source="a-cmd" target="a-fr">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m4" value="registry" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;strokeColor=#073642;fontSize=11;verticalAlign=bottom;" edge="1" parent="sw-entr" source="a-fr" target="a-cmd">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m5" value="SELECT latencia, tapping, tiempo,&#10;rectificaciones, score, emocion_objetivo&#10;(sin user_id)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#073642;fontSize=10;verticalAlign=bottom;" edge="1" parent="sw-entr" source="a-tr" target="a-db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m6" value="N filas agregables" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;strokeColor=#073642;fontSize=11;verticalAlign=bottom;" edge="1" parent="sw-entr" source="a-db" target="a-tr">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m7" value="bayes()&#10;[alegria, tristeza, ansiedad,&#10;frustracion, neutralidad]&#160;K=5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#073642;fontSize=10;verticalAlign=bottom;" edge="1" parent="sw-entr" source="a-cmd" target="a-en">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m8" value="&lt;&lt;loop&gt;&gt;&#160;por cada clase C (5 iteraciones)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;dashed=1;strokeColor=#B58900;fontSize=11;fontStyle=1;verticalAlign=bottom;" edge="1" parent="sw-entr" source="a-tr" target="a-tr">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m9" value="&#956;&#7522;,C = &#931;x / N_c&#10;&#963;&#7522;,C = max(&#8730;(&#931;x&#178;/N_c &#8722; &#956;&#178;), &#963;_min)&#10;P(C) = (N_c + &#945;) / (N + &#945;&#183;K)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeColor=#073642;fontSize=10;align=left;verticalAlign=middle;labelBackgroundColor=#FFF8E1;" edge="1" parent="sw-entr" source="a-tr" target="a-tr">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="250" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m10" value="&lt;&lt;alt&gt;&gt;&#160;N_c &lt; min_muestras_por_clase&#10;&#8594; se conservan &#956;/&#963;/prior de config&#10;&#160;&#160;se anota en clases_debilitadas" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;dashed=1;strokeColor=#CC6666;fontSize=10;align=left;labelBackgroundColor=#FFF8E1;" edge="1" parent="sw-entr" source="a-fr" target="a-tr">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m11" value="new BayesModel(priors, mu, sigma, metadatos)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#073642;fontSize=10;verticalAlign=bottom;" edge="1" parent="sw-entr" source="a-tr" target="a-mo">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m12" value="modelo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;strokeColor=#073642;fontSize=11;verticalAlign=bottom;" edge="1" parent="sw-entr" source="a-mo" target="a-tr">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m13" value="guardar(storage/app/bayes/modelo.json)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#073642;fontSize=10;verticalAlign=bottom;" edge="1" parent="sw-entr" source="a-mo" target="a-repo">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m14" value="&quot;Guardado v3 &#183; N=412&#10;accuracy=0.68&quot;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;strokeColor=#073642;fontSize=10;verticalAlign=bottom;" edge="1" parent="sw-entr" source="a-repo" target="a-cmd">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="nota-entr" value="&#9201;&#160;Coste: una sola consulta agregada. Se puede reentrenar cada vez que se incorporan partidas nuevas, sin coste para el jugador. La inferencia NO toca la base de datos.&#10;&#10;&lt;b&gt;Cu&#225;ndo reentrenar:&lt;/b&gt; 1) cada N partidas nuevas&#160;&#160;2) tras una campa&#241;a de recolecci&#243;n&#160;&#160;3) si la matriz de confusi&#243;n del panel baja" style="shape=note;whiteSpace=wrap;html=1;size=16;align=left;verticalAlign=top;fillColor=#EEE8D5;strokeColor=#93A1A1;fontSize=11;spacing=8;" vertex="1" parent="sw-entr">
+          <mxGeometry x="1170" y="180" width="330" height="160" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a-u" value="Estudiante" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#EEE8D5;strokeColor=#93A1A1;" vertex="1" parent="sw-inf">
+          <mxGeometry x="60" y="510" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="a-game" value="Minijuego&#10;(C&#243;digo An&#243;malo)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#EEE8D5;strokeColor=#93A1A1;" vertex="1" parent="sw-inf">
+          <mxGeometry x="220" y="505" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="a-ctrl" value="Diagnostico&#10;Controller" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#EEE8D5;strokeColor=#93A1A1;" vertex="1" parent="sw-inf">
+          <mxGeometry x="390" y="505" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="a-clf" value="BayesNaive&#10;Classifier" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#FDF6E3;strokeColor=#B58900;strokeWidth=2;" vertex="1" parent="sw-inf">
+          <mxGeometry x="560" y="505" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="a-fr2" value="Feature&#10;Registry" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#EEE8D5;strokeColor=#93A1A1;" vertex="1" parent="sw-inf">
+          <mxGeometry x="730" y="505" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="a-mo2" value="BayesModel&#10;(en memoria)" style="shape=note;whiteSpace=wrap;html=1;size=12;fillColor=#FDF6E3;strokeColor=#B58900;" vertex="1" parent="sw-inf">
+          <mxGeometry x="900" y="505" width="40" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="a-db2" value="TelemetriaGameplay" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;whiteSpace=wrap;html=1;size=10;fillColor=#EEE8D5;strokeColor=#93A1A1;" vertex="1" parent="sw-inf">
+          <mxGeometry x="1060" y="500" width="40" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="n1" value="juega la partida&#10;POST /terminal/minijuegos/telemetria" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#073642;fontSize=10;verticalAlign=bottom;" edge="1" parent="sw-inf" source="a-u" target="a-game">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n2" value="vector_caracteristicas size:5&#10;rangos antifraude, clases v&#225;lidas" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#073642;fontSize=10;verticalAlign=bottom;" edge="1" parent="sw-inf" source="a-game" target="a-ctrl">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n3" value="predecir(vector)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#073642;fontSize=11;verticalAlign=bottom;" edge="1" parent="sw-inf" source="a-ctrl" target="a-clf">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n4" value="mapearVectorPosicional&#10;[500, 2.0, 20000, 0, 95]&#10;&#8594; {latencia:500, tapping:2.0, ...}" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#073642;fontSize=10;verticalAlign=bottom;" edge="1" parent="sw-inf" source="a-clf" target="a-fr2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n5" value="registro con nombre" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;strokeColor=#073642;fontSize=10;verticalAlign=bottom;" edge="1" parent="sw-inf" source="a-fr2" target="a-clf">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n6" value="priors, mu, sigma" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#073642;fontSize=10;verticalAlign=bottom;" edge="1" parent="sw-inf" source="a-clf" target="a-mo2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n7" value="&lt;&lt;loop&gt;&gt; 5 clases &#215; 5 features&#10;logScorer(C) = log P(C) + &#8721;&#7522; log N(x&#7522; | &#956;&#7522;,C, &#963;&#7522;,C)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;dashed=1;strokeColor=#B58900;fontSize=10;fontStyle=1;align=left;labelBackgroundColor=#F1F8F2;" edge="1" parent="sw-inf" source="a-clf" target="a-clf">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n8" value="Z = logsumExp({logScorer})&#10;P(C|x) = exp(logScorer(C) &#8722; Z)&#10;pred = argmax&#160;&#160;conf = P&#215;100" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeColor=#073642;fontSize=10;align=left;labelBackgroundColor=#F1F8F2;" edge="1" parent="sw-inf" source="a-clf" target="a-clf">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="640" y="700" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n9" value="BayesResultado&#10;{prediccion, confianza,&#10;probabilidades, log_scores}" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;strokeColor=#073642;fontSize=10;verticalAlign=bottom;" edge="1" parent="sw-inf" source="a-clf" target="a-ctrl">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n10" value="INSERT telemetria_gameplay&#10;emocion_predicha &#8592; argmax&#10;diagnostico_correcto &#8592; (pred == objetivo)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#073642;fontSize=10;verticalAlign=bottom;" edge="1" parent="sw-inf" source="a-ctrl" target="a-db2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n11" value="201 Created&#10;{status, message, ia_output}" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#073642;fontSize=10;verticalAlign=bottom;" edge="1" parent="sw-inf" source="a-ctrl" target="a-game">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n12" value="&quot;Partida registrada.&quot;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#073642;fontSize=10;verticalAlign=bottom;" edge="1" parent="sw-inf" source="a-game" target="a-u">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="nota-lse" value="Se normaliza el log-posterior, no el posterior.&#10;Ponderar exponenciales sin log-sum-exp da underflow a 0.0 en cuanto hay muchas features: el modelo devolver&#237;a &quot;ninguna clase&quot; sin avisar.&#10;&#10;El log-sum-exp mantiene la suma en 1.0." style="shape=note;whiteSpace=wrap;html=1;size=16;align=left;verticalAlign=top;fillColor=#E8F0FE;strokeColor=#93A1A1;fontSize=11;spacing=8;" vertex="1" parent="sw-inf">
+          <mxGeometry x="1140" y="590" width="390" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="nota-priv" value="&#128274;&#160;El panel corre por separado, mucho despu&#233;s. Solo lee agregados y nunca identifica a nadie: la confianza de una partida no se muestra en admin/validacion-cientifica, porque el dato individual requiere consentimiento vigente.&#10;&#10;Lee: emocion_objetivo, emocion_predicha, diagnostico_correcto, latencia, tapping&#10;&#8594; colapsa 8 clases del juego a 5&#10;&#8594; matriz de confusi&#243;n [Real][Predicho] + accuracy, macro-F1, precision, recall" style="shape=note;whiteSpace=wrap;html=1;size=16;align=left;verticalAlign=top;fillColor=#E8F5E9;strokeColor=#93A1A1;fontSize=11;spacing=8;" vertex="1" parent="sw-inf">
+          <mxGeometry x="1140" y="730" width="390" height="150" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

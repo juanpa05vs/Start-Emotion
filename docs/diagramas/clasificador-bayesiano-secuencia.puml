@@ -1,0 +1,210 @@
+@startuml StartEmotion_Bayes_Secuencia
+
+' ═══════════════════════════════════════════════════════════════════════════
+'  Start-Emotion · Clasificador Bayesiano Gaussiano
+'  Diagrama de SECUENCIA — entrenamiento e inferencia
+' ═══════════════════════════════════════════════════════════════════════════
+
+title Start-Emotion — Bayesian Classifier<font size=11> · secuencia: entrenamiento e inferencia</font>
+
+skinparam shadowing false
+skinparam defaultFontSize 12
+skinparam ArrowColor #073642
+skinparam ParticipantBackgroundColor #FDF6E3
+skinparam ParticipantBorderColor #B58900
+skinparam ParticipantFontColor #073642
+skinparam ActorBackgroundColor #EEE8D5
+skinparam ActorBorderColor #93A1A1
+skinparam LifeLineBorderColor #93A1A1
+skinparam LifeLineBackgroundColor #FFFDF5
+skinparam SequenceBoxBackgroundColor #FFFDF5
+skinparam SequenceBoxBorderColor #93A1A1
+skinparam SequenceGroupBackgroundColor #EEE8D5
+skinparam note {
+    BackgroundColor #EEE8D5
+    BorderColor #93A1A1
+    FontColor #073642
+}
+
+' ═══════════════════ 1 · ENTRENAMIENTO ═══════════════════
+
+box "FASE DE ENTRENAMIENTO · php artisan bayes:entrenar" #FFF8E1
+actor "~Operador de la\ninvestigación" as Op
+participant "EntrenarBayesCommand" as Cmd
+participant "BayesTrainer" as Tr
+participant "FeatureRegistry" as Fr
+participant "TelemetriaGameplay" as DB
+participant "EmocionEnum" as En
+participant "BayesModel" as Mo
+participant "BayesModelRepository" as Repo
+end box
+
+== Fase 1 · Cálculo de μ, σ y P(C) ==
+
+Op -> Cmd : bayes:entrenar [--min-por-clase] [--evaluar]
+activate Cmd
+
+Cmd -> Tr : new BayesTrainer(clases)
+activate Tr
+Cmd -> Fr : desdeConfig()
+Fr -> Fr : lee config('bayes.features') → 5 características
+Fr --> Cmd : registry
+Cmd -> En : bayes()
+En --> Cmd : [alegria, tristeza, ansiedad,\nfrustracion, neutralidad]  (K = 5)
+
+Cmd -> Repo : existe()
+Repo --> Cmd : true / false
+
+Tr -> DB : select(latencia, tapping, tiempo,\n  rectificaciones, score, emocion_objetivo)
+note right of DB
+  Sin user_id, sin created_at, sin
+  diagnostico_correcto: el conjunto de
+  entrenamiento no puede identificar
+  a nadie aunque se filtre en pantalla.
+end note
+DB --> Tr : N filas agregables
+
+loop Por cada clase C (5 iteraciones)
+  Tr -> Tr : N_c, Σx, Σx²  para las 5 features
+  Tr -> Tr : μ_{i,C} = Σx / N_c
+  Tr -> Tr : σ_{i,C} = max(√(Σx²/N_c − μ²), σ_min)
+
+  alt N_c < min_muestras_por_clase
+    Tr -> Tr : descarta los μ/σ calculados
+    Tr -> Fr : priorPorDefecto(feature)
+    Fr --> Tr : μ, σ de config/bayes.php
+    note right of Tr
+      Se registra en metadatos['clases_debilitadas'].
+      El panel de validación lo muestra; no hay
+      degradación silenciosa.
+    end note
+  end
+
+  Tr -> Tr : P(C) = (N_c + α) / (N + α·K)
+end
+
+Tr -> Mo : new BayesModel(priors, mu, sigma, metadatos)
+Mo --> Tr : modelo
+Tr --> Cmd : BayesModel
+
+deactivate Tr
+
+opt "si se pasa --evaluar"
+  Cmd -> Tr : metricasSobre(muestras, modelo)
+  Tr -> Tr : matriz de confusión + accuracy,\nprecision, recall, F1 por clase
+  Tr --> Cmd : array de métricas
+end
+
+Cmd -> Mo : guardar(storage/app/bayes/modelo.json)
+Cmd -> Repo : guardar(modelo)
+Repo -> Repo : copia el anterior a modelo-<ts>.json
+Repo --> Cmd : "Guardado v3 · N=412 · accuracy=0.68"
+
+deactivate Cmd
+
+note over Op, Repo
+  ⏱ Coste: una sola consulta agregada. Se puede reentrenar
+  cada vez que se incorporan partidas nuevas, sin coste
+  para el jugador. La inferencia NO toca la base de datos.
+
+  __CUANDO hay que reentrenar__
+  1. Cada N partidas nuevas
+  2. Tras una campaña de recolección
+  3. Si la matriz de confusión del panel cae
+end note
+
+newpage
+
+' ═══════════════════ 2 · INFERENCIA ═══════════════════
+
+box "FASE DE INFERENCIA · en vivo, por partida" #E8F5E9
+actor "Estudiante" as U
+participant "Minijuego\n(Código Anómalo)" as Game
+participant "DiagnosticoController" as Ctrl
+participant "BayesNaiveClassifier" as Clf
+participant "FeatureRegistry" as Fr2
+participant "BayesModel" as Mo2
+participant "TelemetriaGameplay" as DB2
+participant "ValidacionCientifica\nController" as Val
+end box
+
+== Fase 2 · Clasificación de una partida ==
+
+U -> Game : juega la partida
+Game -> Game : captura telemetría\ny la emoción objetivo
+Game -> Ctrl : POST /terminal/minijuegos/telemetria
+activate Ctrl
+
+Ctrl -> Ctrl : validate(vector_caracteristicas size:5,\n  rangos antifraude, clases válidas)
+note right of Ctrl
+  Los límites superiores son guardas anti-corrupción,
+  NO reglas de negocio: una partida legítima
+  SIEMPRE se persiste. Si se rechazan muestras aquí,
+  la matriz de validación se queda sin datos sin avisar.
+end note
+
+Ctrl -> Clf : predecir(vector)
+activate Clf
+
+Clf -> Fr2 : mapearVectorPosicional([500, 2.0, 20000, 0, 95])
+Fr2 --> Clf : {latencia_promedio_ms:500,\n  frecuencia_tapping:2.0, tiempo_total_ms:20000,\n  conteo_rectificaciones:0, score_final:95}
+
+Clf -> Mo2 : priors, mu, sigma
+Mo2 --> Clf : parámetros por clase
+
+loop Por cada clase C ∈ 5 clases
+  Clf -> Clf : logScorer(C) = log P(C)
+  loop Por cada feature i ∈ 5
+    Clf -> Clf : += log N(xᵢ | μ_{i,C}, σ_{i,C})
+  end
+  Clf -> Clf : logScorer(C) -= logSumExp(todos)
+end
+note right of Clf
+  Se normaliza el log-posterior, no el posterior.
+  Ponderar exponenciales sin log-sum-exp da
+  underflow a 0.0 en cuanto hay muchas features:
+  el modelo devolvería "ninguna clase" sin
+  avisar. El log-sum-exp mantiene la suma en 1.0.
+end note
+
+Clf -> Clf : P(C|x) = exp(logScorer(C))
+Clf -> Clf : argmax → predicción\nconfianza = P(argmax|x) · 100
+
+Clf --> Ctrl : BayesResultado\n{prediccion, confianza, probabilidades,\n log_scores, vector_entrada}
+deactivate Clf
+
+Ctrl -> Mo2 : (ninguna llamada: el modelo ya está en memoria)
+Ctrl -> Ctrl : etiqueta() → "Ansiedad"
+
+Ctrl -> DB2 : INSERT telemetria_gameplay
+note right of DB2
+  emocion_predicha   ← P(C|x) máximo
+  diagnostico_correcto ← (predicción == objetivo)
+  vector_caracteristicas += confianza_ia,
+                            probabilidades,
+                            seleccion_operador
+end note
+DB2 --> Ctrl : id = 1.204
+
+Ctrl --> Game : 201 Created\n{status, message, ia_output}
+Game --> U : "Partida registrada."
+
+deactivate Ctrl
+
+== Fase 3 · lo que se lee después ==
+
+note over Val, DB2
+  El panel corre por separado, mucho después.
+  Solo lee agregados y nunca identifica a nadie:
+  la confianza de una partida no se muestra en
+  admin/validacion-cientifica, porque el dato
+  individual requiere consentimiento vigente.
+end note
+
+Val -> DB2 : SELECT emocion_objetivo, emocion_predicha,\n  diagnostico_correcto, latencia, tapping
+DB2 --> Val : N filas
+Val -> Val : colapsa 8 clases del juego → 5 (normalizarParaRF)
+Val -> Val : matriz de confusión [Real][Predicho]
+Val -> Val : accuracy, macro-F1, precision, recall
+
+@enduml

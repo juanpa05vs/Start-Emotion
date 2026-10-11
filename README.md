@@ -1,58 +1,142 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# S-Emotion
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Descripción general
 
-## About Laravel
+S-Emotion es una aplicación web de autorregistro emocional y apoyo a la autoobservación, orientada a estudiantes. Permite registrar el estado afectivo, energía y contexto diario, completar la evaluación psicométrica SISCO (estrés académico), participar en un minijuego conductual ("Código Anómalo") con telemetría y un módulo de inferencia basado en Random Forest para explorar patrones comportamentales. 
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+El sistema integra un mecanismo de consentimiento explícito, granular y reversible: un estudiante puede autorizar a un profesional de psicología a ver solo las categorías que elija (registros diarios, evaluaciones psicométricas o telemetría del juego), mientras conserva el control total y puede revocar ese acceso en cualquier momento. 
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+La validación científica funciona únicamente con datos agregados y anonimización por HMAC, sin exponer historiales clínicos individuales al panel de administración.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Propósito
 
-## Learning Laravel
+- Promover la autoobservación emocional (registro diario: emoción, energía, contexto, observaciones, nivel de estrés estimado y recomendaciones).
+- Facilitar la conexión con un profesional mediante códigos de invitación de un solo uso y consentimiento por alcance.
+- Recoger telemetría conductual (latencia, tapping, rectificaciones, errores, score) para análisis y validación científica.
+- Garantizar la separación entre espacio de autoobservación (estudiante), atención (psicólogo, solo con consentimiento vigente) y gestión (administrador, sin acceso clínico individual).
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Stack tecnológico principal
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+| Componente | Tecnología | Versión |
+|---|---|---|
+| Lenguaje | PHP | ^8.2 |
+| Framework | Laravel | ^11.0 |
+| ORM | Eloquent (Laravel) | 11.x |
+| Autenticación/RBAC | spatie/laravel-permission | ^6.0 |
+| Reportes PDF | barryvdh/laravel-dompdf | ^3.0 |
+| Frontend build | Vite + Laravel Vite Plugin | ^8.0 / ^3.0 |
+| CSS | Tailwind CSS | ^4.2.2 |
+| Testing | PHPUnit | ^11.0 |
+| Node.js | Node | >=20 (build Docker) |
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## Requisitos previos
 
-## Agentic Development
+- PHP 8.2+ con extensiones: pdo, sqlite/mysql, mbstring, xml, json, curl
+- Composer 2.x
+- Node.js 20+ y npm
+- Base de datos: SQLite (desarrollo recomendado) o MySQL/MariaDB/PostgreSQL
+- (Opcional) Docker: imagen `richarvey/nginx-php-fpm:3.1.6` + Node 20 para build de assets
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Guía paso a paso (entorno de desarrollo)
+
+### 1. Clonar e instalar dependencias
 
 ```bash
-composer require laravel/boost --dev
+git clone <repo-url> Start-Emotion
+cd Start-Emotion
 
-php artisan boost:install
+# PHP
+composer install
+
+# Node (assets)
+npm install
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### 2. Configurar variables de entorno
 
-## Contributing
+Copiar `.env.example` a `.env`:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+cp .env.example .env  # Linux/macOS
+# copy .env.example .env en Windows (CMD/PowerShell)
+```
 
-## Code of Conduct
+Variables relevantes:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+| Variable | Descripción | Valor sugerido (dev) |
+|---|---|---|
+| APP_NAME | Nombre de la app | S-Emotion |
+| APP_ENV | Entorno | local |
+| APP_DEBUG | Depuración | true |
+| APP_URL | URL base | http://localhost:8000 |
+| APP_LOCALE | Idioma | es |
+| DB_CONNECTION | Conexión BD | sqlite (por defecto en .env.example) |
+| SESSION_DRIVER | Sesión | database |
+| QUEUE_CONNECTION | Cola | database |
+| CACHE_STORE | Caché | database |
+| FILESYSTEM_DISK | Disco | local |
+| MAIL_MAILER | Correo (dev) | log |
+| ADMIN_MASTER_KEY | Clave maestra para registrar Psicólogo/Administrador | Definir en .env (usar valor seguro) |
 
-## Security Vulnerabilities
+> Si usas MySQL: descomentar `DB_HOST/PORT/DB_DATABASE/DB_USERNAME/DB_PASSWORD` y cambiar `DB_CONNECTION=mysql`.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### 3. Generar clave, migraciones, seeders y assets
 
-## License
+```bash
+php artisan key:generate
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# Ejecutar migraciones y seeders (crea roles/permisos)
+php artisan migrate --seed
+
+# Compilar assets (dev con hot reload o build)
+npm run dev        # Vite dev server
+# o
+npm run build      # Build producción
+```
+
+Comando combinado (serve + queue + logs + vite): `composer run dev`
+
+### 4. Ejecutar servidor
+
+```bash
+php artisan serve
+```
+
+Abrir `http://localhost:8000`.
+
+### 5. Pruebas
+
+```bash
+php artisan test
+```
+
+## Estructura general del proyecto
+
+| Carpeta | Responsabilidad |
+|---|---|
+| `app/` | Núcleo de la aplicación: `Http/Controllers`, `Http/Middleware`, `Models`, `Enums`, `Services` (p. ej. `RandomForestService`), `Providers`. |
+| `app/Enums/` | Tipados de dominio: `AlcanceConsentimiento`, `EmocionEnum`. |
+| `app/Models/` | Eloquent: User (tabla `usuarios`), RegistroEmocion, EvaluacionPsicometrica, TelemetriaGameplay, Consentimiento, InvitacionPsicologo, Feedback. |
+| `app/Http/Controllers/` | Controladores web: Auth, Emocion, EvaluacionPsicometrica, Diagnostico, Privacidad, Psicologia, Usuario, ValidacionCientifica. |
+| `app/Http/Middleware/` | `EsEstudiante` (reserva espacio de autoobservación). |
+| `bootstrap/` | Arranque app (registro de middlewares/aliases). |
+| `config/` | Configuración Laravel + `permission.php`, `auth.php` (`admin_master_key`). |
+| `database/migrations/` | Esquema BD (usuarios, registros, consentimiento, invitaciones, evaluaciones, telemetría, permisos). |
+| `database/seeders/` | `RoleSeeder` (roles/permisos), `DatabaseSeeder`. |
+| `database/factories/` | Factories para tests. |
+| `lang/es/` | Traducciones/validación en español. |
+| `resources/` | Vistas Blade, CSS/JS, assets. |
+| `routes/` | `web.php` (rutas principales), `console.php`. |
+| `docs/` | Documentación técnica (`ARCHITECTURE.md`, `DATABASE.md`, `API.md`, `diagramas/`). |
+| `tests/Feature/` | Tests funcionales (consentimiento, privacidad admin, validación científica, etc.). |
+| `public/` | `index.php`, `build/` (assets compilados). |
+
+## Notas de seguridad/privacidad
+
+- Política pública `/privacidad`. 
+- Consentimiento vigente obligatorio para ver datos clínicos (espacio `Psicólogo`). 
+- Código anónimo: `User::codigoParticipante()` usa HMAC-SHA256 con `APP_KEY` (pseudónimo, no anonimato irreversible). 
+- Panel validación: solo agregado, sin cargar relaciones `user` en ese controlador; CSV exporta código anónimo. 
+- Throttling: login 10/min, registro 20/min, telemetría 60/min. 
+- ADMIN_MASTER_KEY validado con `hash_equals`. 
+- Espacio autoobservación protegido por middleware `estudiante` (no solo enlaces).

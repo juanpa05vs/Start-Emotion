@@ -1,0 +1,317 @@
+@startuml StartEmotion_Clasificador_Bayesiano
+
+' ═══════════════════════════════════════════════════════════════════════════
+'  Start-Emotion · Clasificador Bayesiano Gaussiano (Gaussian Naive Bayes)
+'  Diagrama de CLASES — estructura del modelo que reemplaza al Random Forest
+'
+'  Render:  plantuml -tpng docs/diagramas/clasificador-bayesiano.puml
+' ═══════════════════════════════════════════════════════════════════════════
+
+title Start-Emotion — Clasificador Bayesiano Gaussiano (GNB)<br/><font size=11>app/Services/Bayes · PHP 8.2 · Laravel 11</font>
+
+' ───────────────────────── estilo ─────────────────────────
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam defaultFontSize 12
+skinparam ArrowColor #073642
+skinparam package {
+    BackgroundColor #FFFDF5
+    BorderColor #93A1A1
+    FontColor #073642
+}
+skinparam class {
+    BackgroundColor #FDF6E3
+    BorderColor #B58900
+    FontColor #073642
+}
+skinparam stereotype {
+    BackgroundColor #EEE8D5
+    FontColor #586E75
+}
+skinparam note {
+    BackgroundColor #EEE8D5
+    BorderColor #93A1A1
+    FontColor #073642
+}
+
+' ═════════════════════════════ SOPORTE ═════════════════════════════
+
+package "app/Enums · app/Models · config" as SOPORTE {
+
+    class EmocionEnum <<enum>> {
+        {static} bayes() : string[]
+        {static} etiqueta(valor) : string
+        {static} normalizarParaRF(valor) : ?string
+        --
+        + bayes() devuelve el MISMO conjunto de 5 clases
+        + que rf() y que validacion(): alegria, tristeza,
+        + ansiedad, frustracion, neutralidad. Se mantiene
+        + asi por coherencia con el eje de columnas de la
+        + matriz de confusion.
+    }
+
+    class TelemetriaGameplay <<Model>> {
+        + latencia_promedio_ms : decimal
+        + frecuencia_tapping : decimal
+        + tiempo_total_ms : int
+        + conteo_rectificaciones : int
+        + score_final : int
+        + emocion_objetivo : string
+        + emocion_predicha : string
+        + diagnostico_correcto : bool
+        + vector_caracteristicas : json
+    }
+
+    class bayes_config <<config/bayes.php>> {
+        --
+        + features : array[5]
+        + variance_floor : float
+        + alpha : float
+        + min_muestras_por_clase : int
+        + ruta_modelo : string
+    }
+}
+
+' ═══════════════════════════ NÚCLEO (app/Services/Bayes) ═══════════════════════════
+
+package "app/Services/Bayes" as BAYES {
+
+    class FeatureRegistry <<value object>> {
+        - registry : array<string, array>
+        --
+        + {static} desdeConfig() : self
+        + caracteristicas() : array
+        + mapearVectorPosicional(vector) : array<string,float>
+        + asegurar(vector) : void
+        --
+        - registry = config('bayes.features')
+    }
+
+    class BayesModel <<artefacto serializable>> {
+        - priors : array<string, float>
+        - mu : array<string, array<string,float>>
+        - sigma : array<string, array<string,float>>
+        - metadatos : array
+        --
+        + clases() : string[]
+        + aArray() : array
+        + {static} desdeArray(datos) : self
+        + guardar(ruta) : void
+        + {static} cargar(ruta) : self
+        + fingerprint() : string
+        --
+        ' mu[clase][feature]      media por clase
+        ' sigma[clase][feature]   desviación por clase
+        ' metadatos: version, entrenado_en, n_muestras,
+        '   n_por_clase, accuracy, fingerprint
+    }
+
+    class BayesTrainer <<entrenamiento>> {
+        - clases : string[]
+        --
+        + entrenar(?int $minPorClase = null) : BayesModel
+        + metricasSobre(muestras, modelo) : array
+        --
+        - agregarAcumuladores(filas) : void
+        - calcularSigma(mu, sumaCuadrados, n) : float
+        - fusionarConPriors(modelo) : BayesModel
+    }
+
+    class BayesNaiveClassifier <<núcleo de inferencia>> {
+        - modelo : BayesModel
+        - features : FeatureRegistry
+        - varianceFloor : float
+        --
+        + {static} entrenarDesdeBd(minPorClase) : self
+        + predecir(vector) : BayesResultado
+        + probabilidades(vector) : array<string,float>
+        + logScores(vector) : array<string,float>
+        --
+        - logVerosimilitudGaussiana(x, mu, sigma) : float
+        - logSumExp(logs) : float
+        - aplicarPisoSigma(sigma) : float
+    }
+
+    class BayesResultado <<DTO de salida>> {
+        + prediccion : string
+        + confianza : float
+        + probabilidades : array<string,float>
+        + logScores : array<string,float>
+        + vectorEntrada : array<string,float>
+        --
+        + aArray() : array
+        + etiqueta() : string
+    }
+
+    class BayesModelRepository <<persistencia>> {
+        - ruta : string
+        - dirRespaldo : string
+        --
+        + existe() : bool
+        + cargar() : BayesModel
+        + guardar(modelo) : void
+        + listarVersiones() : string[]
+        + borrar() : void
+        --
+        - rutaActual() : string
+    }
+}
+
+' ═══════════════════════════ ENTRADA ═══════════════════════════
+
+package "app/Console/Commands" as CMD {
+    class EntrenarBayesCommand <<command>> {
+        + handle() : int
+        --
+        ' php artisan bayes:entrenar
+        '   --min-por-clase=N
+        '   --forzar        (ignora el mínimo y entrena igual)
+        '   --evaluar       (matriz de confusión del treino)
+    }
+}
+
+' ═══════════════════════════ CONSUMIDORES ═══════════════════════════
+
+package "app/Http/Controllers" as CTRL {
+
+    class DiagnosticoController {
+        + guardarTelemetria(Request) : JsonResponse
+        --
+        - cliente : Browser/JS del minijuego
+        - vector[5] llega ya validado
+    }
+
+    class ValidacionCientificaController {
+        + index() : View
+        + exportarCSV() : StreamedResponse
+        --
+        ' Solo agregados. Nunca carga user_id
+        ' ni enumera filas por persona.
+    }
+
+    class RandomForestService <<retirado>> {
+        + predecir(vector) : array
+        --
+        ' Se elimina: los 5 árboles escritos a mano
+        ' se reemplazan por P(clase|x) aprendida
+        ' de telemetria_gameplay.
+        ' Sus pruebas (RandomForestServiceTest)
+        ' se borran junto con la clase.
+    }
+}
+
+' ═════════════════════════════ RELACIONES ═════════════════════════════
+
+FeatureRegistry ..> bayes_config : «lee»
+BayesTrainer ..> bayes_config : «lee»
+BayesTrainer ..> TelemetriaGameplay : «agrega»\nSELECT features + emocion_objetivo\n-- sin user_id --
+BayesTrainer ..> EmocionEnum : «clases»
+BayesTrainer ..> BayesModel : «produce»
+BayesModel ..> FeatureRegistry : «verifica nombres»
+BayesNaiveClassifier *-- BayesModel
+BayesNaiveClassifier *-- FeatureRegistry
+BayesNaiveClassifier ..> BayesResultado : «produce»
+BayesModelRepository o-- BayesModel : «persiste»
+EntrenarBayesCommand ..> BayesTrainer
+EntrenarBayesCommand ..> BayesModelRepository : «guarda / versiona»
+EntrenarBayesCommand ..> TelemetriaGameplay : «n-muestras»
+DiagnosticoController ..> BayesNaiveClassifier : «predecir(vector)»
+DiagnosticoController ..> TelemetriaGameplay : «persiste partida»
+DiagnosticoController ..> EmocionEnum : «etiqueta()»
+ValidacionCientificaController ..> TelemetriaGameplay : «agregados»
+ValidacionCientificaController ..> EmocionEnum : «validacion()»
+RandomForestService ..x DiagnosticoController : (lo reemplaza)
+
+' ═════════════════════════════ NOTAS ═════════════════════════════
+
+note top of BayesNaiveClassifier
+  ╔══════════════════════════════════════════════════╗
+  ║  INFERENCIA — se ejecuta en cada partida          ║
+  ╚══════════════════════════════════════════════════╝
+
+  1. FeatureRegistry::mapearVectorPosicional()
+     [500, 2.0, 20000, 0, 95] →
+     {latencia_promedio_ms: 500, frecuencia_tapping: 2.0,
+      tiempo_total_ms: 20000, conteo_rectificaciones: 0,
+      score_final: 95}
+
+  2. Para cada clase C ∈ {alegria, tristeza, ansiedad,
+     frustracion, neutralidad}:
+
+     logScorer(C) = log P(C) + Σᵢ log N(xᵢ | μ_{i,C}, σ_{i,C})
+
+     log N(x | μ, σ) = −ln(σ·√2π) − (x−μ)² / (2σ²)
+
+  3. Normalización con log-sum-exp (evita underflow):
+
+     Z = logsumExp({logScorer(C)})
+     P(C|x) = exp(logScorer(C) − Z)
+     P(C|x) = 1.0 por construcción.
+
+  4. predicción = argmax P(C|x)
+     confianza  = P(argmax|x) · 100
+  ────────────────────────────────────────────────────
+  σ se acota por config('bayes.variance_floor')
+  para que σ → 0 no produzca división por cero.
+end note
+
+note top of BayesTrainer
+  ╔══════════════════════════════════════════════════╗
+  ║  ENTRENAMIENTO — se ejecuta a mano,             ║
+  ║  nunca en una partida                           ║
+  ╚══════════════════════════════════════════════════╝
+
+  · Una sola pasada sobre telemetria_gameplay.
+  · Solo se leen las 6 columnas del modelo; la
+    consulta NO incluye user_id, así que el
+    conjunto de entrenamiento no puede contener
+    datos identificables por construcción.
+
+  Verosimilitud por clase (máxima verosimilitud,
+  MLE, de una Gaussiana):
+    μ_{i,C}  = (1/N_c) Σ xᵢ
+    σ²_{i,C} = (1/N_c) Σ (xᵢ − μ_{i,C})²
+    (Estimador sesgado: 1/N_c, no 1/(N_c−1) — el
+     modelo no estima varianza, solo likelihood.)
+
+  Priors con suavizado aditivo (Laplace, α):
+    P(C) = (N_c + α) / (N + α·K)     K = 5 clases
+
+  ────────────────────────────────────────────────────
+  DEGRADACIÓN SEGURA
+  Si una clase tiene < min_muestras_por_clase, sus
+  μ/σ y su prior NO se tocan: se conservan los del
+  config. Una clase escasa no puede vaciar el modelo.
+  El panel lo anuncia; no se degrada en silencio.
+end note
+
+note bottom of BayesResultado
+  Mismo contrato de salida que RandomForestService,
+  por eso DiagnosticoController no cambia más que la
+  línea 63:
+
+    [ 'prediccion'     => 'ansiedad',
+      'confianza'      => 71.4,
+      'probabilidades' => [ 'ansiedad' => 71.4, ... ] ]
+
+  + se añaden 'log_scores' y 'vector_entrada' para la
+  auditoría del panel de validación científica.
+end note
+
+note bottom of RandomForestService #FFE8E8
+  ⚠ BORRADO EN EL MISMO COMMIT
+  RandomForestService.php
+  tests/Unit/RandomForestServiceTest.php
+  $analisisIA en DiagnosticoController:63
+end note
+
+note bottom of ValidacionCientificaController #E8F5E9
+  El panel ya no necesita cambiar de métricas: lee las
+  MISMAS columnas (emocion_predicha, emocion_objetivo,
+  diagnostico_correcto). Lo que cambia es que ahora las
+  predicciones están aprendidas y no escritas a mano, así
+  que la matriz de confusión informa algo real.
+end note
+
+@enduml
