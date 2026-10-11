@@ -36,7 +36,7 @@ class EmocionController extends Controller
             'alerta_burnout' => $analisis['burnout'],
         ]);
 
-        return redirect()->route('dashboard')->with('status', 'BIO-SYNC: Análisis de Red Completado');
+        return redirect()->route('dashboard')->with('status', 'Registro guardado.');
     }
 
     /**
@@ -73,7 +73,7 @@ class EmocionController extends Controller
         $estresBase = $this->calcularEstresSimulado($emocion, $energia);
         $estresFinal = min(100, $estresBase + $estresPorTexto + $ajusteContexto);
 
-        $recomendacion = $this->ensamblarRecomendacionNeural($emocion, $energia, $estresFinal, $ctx, $alertaBurnout);
+        $recomendacion = $this->ensamblarRecomendacion($emocion, $energia, $estresFinal, $ctx, $alertaBurnout);
 
         return [
             'estres' => $estresFinal,
@@ -82,33 +82,37 @@ class EmocionController extends Controller
         ];
     }
 
-    private function ensamblarRecomendacionNeural($emocion, $energia, $estres, $ctx, $burnout)
+    private function ensamblarRecomendacion($emocion, $energia, $estres, $ctx, $burnout)
     {
+        // Las recomendaciones se escriben como se hablaría con una persona,
+        // no como un diagnóstico técnico: quien registra una emoción no quiere
+        // leer «SOBRECARGA DE TENSIÓN: Atenúa las tareas críticas», quiere
+        // saber qué puede hacer hoy con lo que siente.
         $prefijo = match (true) {
-            $burnout => '⚠️ ALERTA BURNOUT: Tu procesador mental está al límite. Pausa obligatoria. ',
-            $estres > 80 => '🔥 SOBRECARGA DE TENSIÓN: Atenúa las tareas críticas de inmediato. ',
-            $energia < 30 && in_array($emocion, ['tristeza', 'melancolia', 'agotado'], true) => '🪫 ENERGÍA EN RESERVA: Reduce el consumo de recursos cognitivos. ',
-            default => '✨ SEÑAL ESTABLE: Núcleo operando bajo parámetros equilibrados. ',
+            $burnout => 'Tu energía está al límite hoy: descansa de verdad y no añadas más tareas por ahora. ',
+            $estres > 80 => 'Llevas mucha tensión acumulada hoy: baja un momento el ritmo y ocúpate solo de lo urgente. ',
+            $energia < 30 && in_array($emocion, ['tristeza', 'melancolia', 'agotado'], true) => 'Hoy tu energía está baja: permítete descansar, lo demás puede esperar. ',
+            default => 'Tu día parece ir en equilibrio: sigue con tu rutina. ',
         };
 
         $nucleo = match ($emocion) {
-            'felicidad' => 'Disfruta de este estado de balance; es un excelente momento para documentar avances.',
-            'entusiasta' => 'Alta motivación detectada. Aprovecha este pico para liquidar los pendientes más complejos.',
-            'productivo' => 'Estás en estado de flujo (Flow). Mantén el enfoque y evita las distracciones externas.',
-            'relajado' => 'Fase de enfriamiento óptima. Ideal para planificar la arquitectura de tus próximos días.',
-            'tristeza' => 'Señal de baja frecuencia. No te presiones por producir; el sistema requiere procesar datos afectivos.',
-            'melancolia' => 'Reflexión profunda. Un espacio de desconexión analógica te vendrá excelente.',
-            'agotado' => 'Fatiga física acumulada. Cierra el IDE de programación y recupera horas de sueño.',
-            'ansioso' => 'Ciclo síncrono acelerado. Fragmenta tus entregas en micro-tareas para reducir la incertidumbre.',
-            'ira' => 'Pico de sobrevoltaje. Aléjate de la consola, respira en bloques de 4 segundos y disipa la tensión.',
-            default => 'Sigue monitoreando los logs de tu comportamiento diario.',
+            'felicidad' => 'Disfruta este momento: es buen día para anotar qué cosas te funcionan bien.',
+            'entusiasta' => 'Tienes mucha energía hoy: aprovecha para avanzar en lo que más te costaba.',
+            'productivo' => 'Estás concentrado y avanzando: mantén el ritmo con descansos breves.',
+            'relajado' => 'Estás tranquilo: buen momento para planear con calma los próximos días.',
+            'tristeza' => 'Hoy te sientes triste, y está bien: no te exijas producir, permítete lo que necesites.',
+            'melancolia' => 'Estás en un momento de reflexión: un rato sin pantallas puede ayudarte a cerrar el día.',
+            'agotado' => 'Tu cuerpo pide descanso: deja los pendientes y recupera horas de sueño esta noche.',
+            'ansioso' => 'Te sientes con ansiedad por lo que viene: divide lo pendiente en pasos pequeños y ve uno a la vez.',
+            'ira' => 'La tensión se está acumulando: aléjate un momento, respira hondo y vuelve con calma.',
+            default => 'Sigue anotando cómo te sientes: cada registro te ayuda a conocerte mejor.',
         };
 
         $cierre = match ($ctx) {
-            'Exámenes' => ' Un examen mide memoria temporal, no tus capacidades como ingeniero.',
-            'Proyecto' => ' Haz commits pequeños. ¡Y no olvides hidratar el sistema operativo de tu cuerpo!',
-            'Clases' => ' Toma apuntes estructurados y estira los músculos entre módulos de clase.',
-            default => ' ¡Optimiza tus bloques de tiempo hoy!',
+            'Exámenes' => ' Recuerda que un examen mide un momento, no lo que vales.',
+            'Proyecto' => ' Avanza de a poco y descansa: tu cuerpo también forma parte del proyecto.',
+            'Clases' => ' Toma apuntes y levántate entre clases para estirar el cuerpo.',
+            default => ' Organiza hoy tu tiempo en bloques pequeños.',
         };
 
         return $prefijo.$nucleo.$cierre;
@@ -192,14 +196,14 @@ class EmocionController extends Controller
     {
         auth()->user()->emociones()->findOrFail($id)->delete();
 
-        return back()->with('status', 'Registro eliminado del sector de memoria.');
+        return back()->with('success', 'Registro eliminado.');
     }
 
     public function reiniciarHistorial()
     {
         auth()->user()->emociones()->delete();
 
-        return back()->with('status', 'MEMORIA PURGADA: El historial ha sido reiniciado.');
+        return back()->with('success', 'Historial reiniciado.');
     }
 
     public function eliminarSeleccionados(Request $request)
@@ -211,6 +215,6 @@ class EmocionController extends Controller
 
         auth()->user()->emociones()->whereIn('id', $request->ids)->delete();
 
-        return back()->with('status', 'SISTEMA ACTUALIZADO: Registros purgados.');
+        return back()->with('success', 'Registros eliminados.');
     }
 }

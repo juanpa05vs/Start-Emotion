@@ -128,7 +128,7 @@
                 </div>
 
                 <div class="mt-5 flex gap-2">
-                    <x-boton-secundario type="button" id="btn-next-clue" class="flex-1" onclick="revealNextClue()">
+                    <x-boton-secundario tipo="button" id="btn-next-clue" class="flex-1" onclick="revealNextClue()">
                         Pedir otra pista
                     </x-boton-secundario>
 
@@ -160,7 +160,7 @@
                     Se guardará tu respuesta y lo que tardas en decidir.
                 </p>
 
-                <x-boton-neutro type="button" class="shrink-0" tamano="pequeno" icono="arrows-rotate" onclick="initGame()">
+                <x-boton-neutro tipo="button" class="shrink-0" tamano="pequeno" icono="arrows-rotate" onclick="initGame()">
                     Empezar de nuevo
                 </x-boton-neutro>
             </div>

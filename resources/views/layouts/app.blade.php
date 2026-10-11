@@ -112,11 +112,12 @@
 
                 {{-- AUTOOBSERVACIÓN: solo para quien usa la herramienta para
                      observarse. El administrador administra cuentas y el
-                     psicólogo atiende; ninguno de los dos tiene un "Menú de
-                     Mando" propio, y mostrarles pantallas que no van a usar
-                     invita a confundir qué se puede consultar desde dónde. --}}
+                     psicólogo atiende; ninguno de los dos tiene un espacio de
+                     autoobservación propio, y mostrarles pantallas que no van
+                     a usar invita a confundir qué se puede consultar desde
+                     dónde. --}}
                 @if ($user && $user->esEstudiante())
-                    <p class="mb-2.5 pl-5 text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-400">Menú de Mando</p>
+                    <p class="mb-2.5 pl-5 text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-400">Mi espacio</p>
 
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" icon="fa-house-chimney" step="01" label="Inicio" />
 
@@ -206,7 +207,7 @@
                              `text-rose-400` escritos a mano, con `10px` en
                              mayúsculas: en modo claro daba 2.65:1, y es la única
                              salida de la sesión. --}}
-                        <x-boton-neutro type="submit" class="w-full" icono="arrow-right-from-bracket">
+                        <x-boton-neutro tipo="submit" class="w-full" icono="arrow-right-from-bracket">
                             Terminar sesión
                         </x-boton-neutro>
                     </form>

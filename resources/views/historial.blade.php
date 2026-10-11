@@ -69,7 +69,7 @@
                  cuántas casillas estén marcadas. `disabled` a secas sí, para que
                  el botón nazca apagado. El aspecto deshabilitado lo aporta
                  `.btn:disabled` en `app.css`. --}}
-            <x-boton-peligro type="submit" id="delete-selected-btn" disabled icono="trash-can">
+            <x-boton-peligro tipo="submit" id="delete-selected-btn" disabled icono="trash-can">
                 Borrar seleccionadas
             </x-boton-peligro>
         </div>
@@ -119,14 +119,20 @@
                             ][$item->emocion] ?? 'border-white/10 text-gray-300 bg-white/5';
 
                             $barColor = [
-                                'felicidad', 'entusiasta', 'productivo' => 'bg-cyan-400',
-                                'relajado'   => 'bg-emerald-400',
-                                'ansioso'    => 'bg-amber-400',
-                                'tristeza'   => 'bg-blue-400',
-                                'melancolia' => 'bg-purple-400',
-                                'agotado'    => 'bg-gray-400',
-                                'ira'        => 'bg-neon-rose',
+                                'felicidad'   => 'bg-cyan-400',
+                                'entusiasta'  => 'bg-cyan-400',
+                                'productivo'  => 'bg-cyan-400',
+                                'relajado'    => 'bg-emerald-400',
+                                'ansioso'     => 'bg-amber-400',
+                                'tristeza'    => 'bg-blue-400',
+                                'melancolia'  => 'bg-purple-400',
+                                'agotado'     => 'bg-gray-400',
+                                'ira'         => 'bg-neon-rose',
                             ][$item->emocion] ?? 'bg-gray-500';
+
+                            // Clave guardada → palabra legible («melancolia»
+                            // se escribe «Melancolía» para quien lee).
+                            $etiqueta = \App\Enums\EmocionEnum::etiqueta($item->emocion);
                         @endphp
 
                         {{-- FILA PRINCIPAL DE LOGS --}}
@@ -146,7 +152,7 @@
                                      información, pero quien no distinga los colores
                                      tiene que poder leer la palabra. --}}
                                 <span class="inline-flex items-center gap-1.5 rounded-control border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide {{ $badgeStyle }}">
-                                    {{ $item->emocion }}
+                                    {{ $etiqueta }}
                                 </span>
                             </td>
 

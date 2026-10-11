@@ -34,13 +34,13 @@
 
     @if ($mensaje)
         <p class="mt-2.5 max-w-lg text-[13px] leading-relaxed text-gray-400">
-            {!! $mensaje !!}
+            {{ $mensaje }}
         </p>
     @endif
 
     @if ($detalle)
         <p class="mt-3 max-w-lg text-[12px] leading-relaxed text-gray-500">
-            {!! $detalle !!}
+            {{ $detalle }}
         </p>
     @endif
 

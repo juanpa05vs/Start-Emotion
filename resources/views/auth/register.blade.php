@@ -53,7 +53,7 @@
                 <label for="edad" class="block mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-400">
                     Edad
                 </label>
-                <input type="number" name="edad" id="edad" value="{{ old('edad') }}" min="13" max="120"
+                <input type="number" name="edad" id="edad" value="{{ old('edad') }}" min="15" max="99"
                        @error('edad') aria-invalid="true" @enderror
                        class="campo w-full rounded-control border bg-black/50 px-4 py-3 text-sm text-white placeholder:text-gray-600 @error('edad') border-rose-400 @enderror"
                        placeholder="—" autocomplete="off" required>

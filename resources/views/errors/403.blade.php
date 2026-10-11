@@ -7,7 +7,7 @@
 {{--
     403.
 
-    Esta pantalla aparece de verdad: el心理学家 que abre `/dashboard` y el
+    Esta pantalla aparece de verdad: el psicólogo que abre `/dashboard` y el
     administrador que sigue un marcador viejo. Ninguna de las dos rutas es un
     error de la aplicación —el reparto de espacios es intencionado— pero la
     página que se veía era la de Laravel en inglés.

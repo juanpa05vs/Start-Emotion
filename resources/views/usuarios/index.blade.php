@@ -82,7 +82,7 @@
                                          en el texto del diálogo, porque `confirm()` es la última línea
                                          antes de un borrado que no se puede deshacer. --}}
                                     <form action="{{ route('usuarios.destroy', $user) }}" method="POST" class="inline"
-                                          onsubmit="return confirm('Se eliminará la cuenta de {{ $user->nombre }} junto con todos sus registros, evaluaciones y partidas. Esta acción no se puede deshacer. ¿Continuar?')">
+                                          onsubmit="return confirm(@js('Se eliminará la cuenta de '.$user->nombre.' junto con todos sus registros, evaluaciones y partidas. Esta acción no se puede deshacer. ¿Continuar?'))">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"

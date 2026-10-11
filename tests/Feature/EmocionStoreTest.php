@@ -91,10 +91,10 @@ class EmocionStoreTest extends TestCase
     public static function contextosValidos(): array
     {
         return [
-            'Exámenes' => ['Exámenes', 'memoria temporal'],
-            'Proyecto' => ['Proyecto', 'commits pequeños'],
-            'Clases' => ['Clases', 'apuntes estructurados'],
-            'General' => ['General', 'Optimiza tus bloques de tiempo'],
+            'Exámenes' => ['Exámenes', 'no lo que vales'],
+            'Proyecto' => ['Proyecto', 'forma parte del proyecto'],
+            'Clases' => ['Clases', 'levántate entre clases'],
+            'General' => ['General', 'bloques pequeños'],
         ];
     }
 

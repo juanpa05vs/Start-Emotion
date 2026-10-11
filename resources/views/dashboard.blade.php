@@ -45,7 +45,7 @@
             {{-- Una palabra, no una cifra: por eso lleva la medida mediana. A
                  tamaño completo «Productivo» se salía de su celda en móvil. --}}
             <p class="dato dato--mediano {{ $ultimoRegistro ? 'dato--acento' : 'dato--vacio' }}">
-                {{ $ultimoRegistro ? \Illuminate\Support\Str::ucfirst($ultimoRegistro->emocion) : 'Sin registros' }}
+                {{ $ultimoRegistro ? \App\Enums\EmocionEnum::etiqueta($ultimoRegistro->emocion) : 'Sin registros' }}
             </p>
         </div>
 

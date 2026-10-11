@@ -122,17 +122,10 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2 border-t border-white/5 pt-4">
-                @if ($profesional)
-                    <a href="{{ route('psicologia.paciente', $consentimiento) }}"
-                       class="inline-flex items-center gap-2 rounded-control border border-white/15 px-3.5 py-2 text-[11px] font-semibold text-gray-300 transition-colors hover:border-white/30 hover:text-white">
-                        Ver ficha
-                    </a>
-                @endif
-
                 {{-- Jerarquía: «retirar» es la acción destructiva, así que va
                      como contorno en rojo y no como otro botón del mismo peso. --}}
                 <form method="POST" action="{{ route('privacidad.revocar', $consentimiento) }}"
-                      onsubmit="return confirm('¿Retirar el acceso? {{ $profesional?->nombre ?? 'Tu profesional' }} dejará de ver tus datos de inmediato.');">
+                      onsubmit="return confirm(@js('¿Retirar el acceso? '.($profesional?->nombre ?? 'Tu profesional').' dejará de ver tus datos de inmediato.'))">
                     @csrf
                     <input type="hidden" name="motivo" value="">
                     <x-boton-peligro icono="link-slash">

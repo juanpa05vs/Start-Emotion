@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte Bio-Sync - Start-Emotion</title>
+    <title>Reporte de emociones - S-Emotion</title>
     <style>
         @page { margin: 1cm; }
         body {
@@ -76,12 +76,12 @@
 <body>
     <div class="header">
         <div class="logo">S-EMOTION</div>
-        <div class="subtitle">Análisis Conductual // Reporte de Sincronización Bio-Sync</div>
+        <div class="subtitle">Reporte de emociones y energía</div>
     </div>
 
     <div class="user-info">
         <p style="margin: 0;"><strong>Estudiante:</strong> {{ $user->nombre }}</p>
-        <p style="margin: 5px 0 0 0;"><strong>ID de Sistema:</strong> #00{{ $user->id }} | <strong>Fecha de Reporte:</strong> {{ date('d/m/Y H:i') }}</p>
+        <p style="margin: 5px 0 0 0;"><strong>Fecha de emisión:</strong> {{ date('d/m/Y H:i') }}</p>
     </div>
 
     <table>
@@ -91,14 +91,14 @@
                 <th>Estado Emocional</th>
                 <th>Energía</th>
                 <th>Estrés</th>
-                <th>Recomendación del Motor IA</th>
+                <th>Recomendación</th>
             </tr>
         </thead>
         <tbody>
             @foreach($historial as $registro)
             <tr>
                 <td>{{ $registro->created_at->format('d/m/Y H:i') }}</td>
-                <td class="status-badge">{{ $registro->emocion }}</td>
+                <td class="status-badge">{{ \App\Enums\EmocionEnum::etiqueta($registro->emocion) }}</td>
                 <td class="energy-val">{{ $registro->energia }}%</td>
                 <td>{{ $registro->nivel_estres_estimado }}%</td>
                 <td style="font-style: italic; color: #666;">"{{ $registro->recomendacion }}"</td>
@@ -108,7 +108,7 @@
     </table>
 
     <div class="footer">
-        PROYECTO START-EMOTION - TESVB INGENIERÍA EN SISTEMAS - ESTE DOCUMENTO ES UN REGISTRO DE DATOS SIMULADOS.
+        Documento generado por S-Emotion. Herramienta de autoobservación: no sustituye la valoración de un profesional de la salud.
     </div>
 </body>
 </html>

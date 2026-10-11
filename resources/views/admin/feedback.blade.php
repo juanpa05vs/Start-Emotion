@@ -89,7 +89,7 @@
                                  de un filete es 3:1. El estado «atendido» ya lo
                                  dice la etiqueta de al lado; el botón no necesita
                                  ser verde para decirlo también. --}}
-                            <x-boton-secundario type="submit" tamano="pequeno" icono="check">
+                            <x-boton-secundario tipo="submit" tamano="pequeno" icono="check">
                                 Marcar como atendido
                             </x-boton-secundario>
                         </form>
