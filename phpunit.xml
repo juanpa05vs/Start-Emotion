@@ -18,7 +18,18 @@
         </include>
     </source>
     <php>
+        <!--
+            Entorno de tests autocontenido: no depende de un .env.testing
+            versionado. La APP_KEY de abajo es desechable y SOLO vale para tests.
+        -->
+        <env name="APP_NAME" value="StartEmotion"/>
         <env name="APP_ENV" value="testing"/>
+        <env name="APP_KEY" value="base64:K6Bzk2/qYXJfXctmw/qFc0QVI4tZt7RdelwoydMKT5Y="/>
+        <env name="APP_DEBUG" value="true"/>
+        <env name="APP_URL" value="http://localhost"/>
+        <env name="APP_LOCALE" value="es"/>
+        <env name="APP_FALLBACK_LOCALE" value="es"/>
+        <env name="APP_FAKER_LOCALE" value="es_ES"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>

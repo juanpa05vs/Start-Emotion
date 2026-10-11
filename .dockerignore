@@ -1,0 +1,39 @@
+# Dependencias y artefactos de build: se instalan/compilan DENTRO de la imagen.
+/vendor
+/node_modules
+/public/build
+/public/hot
+
+# Secretos y configuración de entorno: se inyectan en runtime, nunca en la imagen.
+.env
+.env.*
+!.env.example
+
+# Metadatos de VCS y de editor.
+.git
+.gitignore
+.editorconfig
+/.idea
+/.vscode
+/.zed
+/.cursor
+
+# Cachés y artefactos locales.
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+/storage/logs/*
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/pail
+/database/*.sqlite
+
+# Documentación y pruebas: no hacen falta en la imagen de producción.
+/tests
+/docs
+*.md
+
+# Otros.
+/Dockerfile
+/docker-compose*.yml
+/.github

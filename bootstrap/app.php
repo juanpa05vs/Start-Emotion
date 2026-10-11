@@ -15,8 +15,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Confiar en los proxies de Render para obligar el uso de HTTPS en los formularios
-        $middleware->trustProxies(at: '*');
+        // Proxies de confianza: se configuran con la variable de entorno
+        // TRUSTED_PROXIES y se leen en tiempo de petición desde
+        // config/trustedproxy.php (seguro con config:cache).
+        //
+        // No se confía en ningún proxy por defecto. Antes se usaba
+        // trustProxies(at: '*'), que permite falsificar la IP y el esquema
+        // mediante cabeceras X-Forwarded-*.
+        //
+        // Si la app va detrás de un balanceador TLS, define TRUSTED_PROXIES
+        // (ver .env.example) para recuperar la detección de HTTPS.
 
         // Registro de alias de middlewares personalizados y de Spatie
         $middleware->alias([
