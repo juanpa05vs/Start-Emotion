@@ -18,8 +18,11 @@ FROM php:8.4-fpm-alpine
 WORKDIR /var/www/html
 
 # Extensiones de PHP (Laravel + dompdf + MySQL/SQLite) y servicios del contenedor.
+# `sqlite-dev` aporta `sqlite3.pc`, que exige `pkg-config` al compilar
+# `pdo_sqlite`; sin él el build falla con
+# «Package requirements (sqlite3 >= 3.7.7) were not met: Package 'sqlite3' not found».
 RUN apk add --no-cache \
-        nginx supervisor icu-dev oniguruma-dev libzip-dev \
+        nginx supervisor icu-dev oniguruma-dev libzip-dev sqlite-dev \
         libpng-dev freetype-dev libjpeg-turbo-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" \
