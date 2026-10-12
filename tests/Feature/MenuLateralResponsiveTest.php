@@ -48,6 +48,102 @@ class MenuLateralResponsiveTest extends TestCase
     }
 
     /**
+     * Especificidad CSS de un selector, como tripleta (ids, clases, tipos).
+     *
+     * Suficiente para los selectores propios de esta prueba; no cubre todos los
+     * casos del estándar (`:is()`, pseudo-elementos anidados…), que aquí no se
+     * usan. Dos especificidades se comparan por tripleta, en orden lexicográfico.
+     */
+    private function especificidad(string $selector): array
+    {
+        $ids = $clases = $tipos = 0;
+
+        // `strspn` recibe un CONJUNTO LITERAL de caracteres, no un rango: la
+        // máscara `'a-zA-Z0-9_-'` solo deja avanzar sobre esos once caracteres
+        // y el índice se queda clavado en la primera letra que no esté en el
+        // conjunto. Por eso se enumera el alfabeto entero.
+        $identificador = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-';
+        $letras = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-';
+
+        // Divide los selectores simples separados por combinadores y comas.
+        $compuestos = preg_split('/[\s>+~]+|,/', $selector, -1, PREG_SPLIT_NO_EMPTY);
+
+        foreach ($compuestos as $compuesto) {
+            $longitud = strlen($compuesto);
+            $i = 0;
+
+            // Un nombre de elemento solo suma si abre el selector simple: en
+            // `html.js` el `html` cuenta como tipo y el `.js` como clase.
+            $abre = true;
+
+            while ($i < $longitud) {
+                $ch = $compuesto[$i];
+
+                if ($ch === '#') {
+                    $ids++;
+                    $i += 1 + strspn(substr($compuesto, $i + 1), $identificador);
+                } elseif ($ch === '.') {
+                    $clases++;
+                    $i += 1 + strspn(substr($compuesto, $i + 1), $identificador);
+                } elseif ($ch === '[') {
+                    $clases++;
+                    $cierra = strpos($compuesto, ']', $i);
+                    $i = $cierra === false ? $longitud : $cierra + 1;
+                } elseif ($ch === ':') {
+                    // Los pseudo-elementos (`::`) no suman; las pseudo-clases
+                    // cuentan como una clase.
+                    if (($compuesto[$i + 1] ?? '') === ':') {
+                        $i += 2 + strspn(substr($compuesto, $i + 2), $letras);
+                    } else {
+                        $clases++;
+                        $i += 1 + strspn(substr($compuesto, $i + 1), $letras);
+
+                        // `:not()` y similares: salta hasta el cierre.
+                        $abreParen = strpos($compuesto, '(', $i);
+                        if ($abreParen !== false) {
+                            $cierraParen = strpos($compuesto, ')', $abreParen);
+                            $i = $cierraParen === false ? $longitud : $cierraParen + 1;
+                        }
+                    }
+                } elseif ($abre) {
+                    $tipos++;
+                    $i += strspn(substr($compuesto, $i), $identificador);
+                } else {
+                    // Carácter suelto que no abre selector: no suma, pero el
+                    // índice tiene que avanzar. Sin esto, cualquier combinación
+                    // inesperada colgaría la prueba en un bucle infinito.
+                    $i++;
+                }
+
+                $abre = false;
+            }
+        }
+
+        return [$ids, $clases, $tipos];
+    }
+
+    /**
+     * La transición del cajón dentro del umbral móvil.
+     *
+     * Captura el cuerpo de la regla `html.js .menu-lateral` que vive dentro de
+     * `@media (max-width: 63.999rem)`, la que debe ganar la cascada.
+     */
+    private function reglaCajonMovil(): string
+    {
+        $css = $this->hoja();
+
+        if (! preg_match(
+            '/@media\s*\(max-width:\s*63\.999rem\)\s*\{.*?html\.js\s+\.menu-lateral\s*\{([^{}]*)\}/s',
+            $css,
+            $m
+        )) {
+            $this->fail('No se encuentra la regla `html.js .menu-lateral` dentro del umbral móvil.');
+        }
+
+        return $m[1];
+    }
+
+    /**
      * El disparador, el velo y la barra existen y están enlazados.
      *
      * Sin `aria-controls` el botón no dice qué abre; sin `aria-expanded` no dice
@@ -239,30 +335,127 @@ class MenuLateralResponsiveTest extends TestCase
     }
 
     /**
-     * El cajón solo anima `transform`, y no vuelve a esconderse con `visibility`.
+     * El deslizamiento se declara en la regla que gana la cascada, no en una
+     * que el navegador se traga.
      *
-     * Es la misma disciplina que el resto del movimiento: nada que re-maquete el
-     * contenido vecino en cada fotograma. Con `transform` el cajón se desliza
-     * sin empujar la página de al lado, y con el movimiento reducido la sección 8
-     * de la hoja ya deja esa transición instantánea. `visibility` se descartó a
-     * propósito: la transición retrasada que dejaría ver el deslizamiento de
-     * salida no es fiable en todos los motores, y aquí la barra quedaba visible
-     * tras cerrarse.
+     * El defecto de H-5b era justo el caso en el que el test anterior pasaba y
+     * el cajón no se deslizaba: `aside.sidebar-alpha` (0-0-1-1) gana a
+     * `.menu-lateral` (0-0-1-0) y la transición de `transform` nunca llegaba al
+     * navegador. Aquí se comprueba el resultado de la cascada: la regla móvil
+     * `html.js .menu-lateral` (0-0-2-1) gana a `aside.sidebar-alpha`, declara
+     * `transform` con los tokens compartidos de movimiento, conserva las
+     * transiciones de color de los temas y no mete ninguna otra propiedad de
+     * maquetación en la transición.
+     *
+     * PHPUnit no calcula estilos computados: esto comprueba la cascada
+     * determinista sobre la fuente. El `transition-property` calculado en un
+     * navegador real se verifica por separado, porque aquí no hay motor de
+     * estilos.
      */
-    public function test_el_cajon_solo_anima_transform(): void
+    public function test_el_cajon_se_desliza_ganando_la_cascada(): void
+    {
+        // Las dos reglas enfrentadas y sus pesos.
+        $ganadora = $this->especificidad('html.js .menu-lateral');
+        $perdedora = $this->especificidad('aside.sidebar-alpha');
+
+        $this->assertSame([0, 2, 1], $ganadora);
+        $this->assertSame([0, 1, 1], $perdedora);
+        $this->assertGreaterThan(
+            0,
+            $ganadora <=> $perdedora,
+            'El deslizamiento se declara en una regla que pierde contra `aside.sidebar-alpha`: la cascada se lo traga.'
+        );
+
+        $cuerpo = $this->reglaCajonMovil();
+
+        $this->assertStringContainsString(
+            'transform var(--movimiento-duracion) var(--movimiento-curva)',
+            $cuerpo,
+            'El desplazamiento no usa los tokens compartidos de duración y curva.'
+        );
+
+        $this->assertStringContainsString(
+            'background-color 0.4s ease',
+            $cuerpo,
+            'La transición de color del cajón (temas claro/oscuro) no se conserva.'
+        );
+
+        $this->assertStringContainsString(
+            'border-color 0.4s ease',
+            $cuerpo,
+            'La transición del filete del cajón no se conserva.'
+        );
+
+        // Solo `transform` mueve el cajón, y los colores lo pintan: ninguna
+        // propiedad de maquetación entra en la transición, para no repintar el
+        // contenido vecino en cada fotograma.
+        preg_match('/transition\s*:\s*(.*)$/s', $cuerpo, $m);
+        $transicion = $m[1] ?? '';
+
+        foreach (['left', 'top', 'width', 'height', 'margin', 'padding'] as $propiedad) {
+            $this->assertStringNotContainsString(
+                $propiedad,
+                $transicion,
+                'El cajón no debe animar '.$propiedad.', solo `transform` y los colores.'
+            );
+        }
+    }
+
+    /**
+     * La transición de color de los temas sigue en `aside.sidebar-alpha`.
+     *
+     * El cambio claro ↔ oscuro del cajón pinta el fondo y el filete con una
+     * transición; ahí seguía viviendo en escritorio y no debe perderse: el fix
+     * solo da más peso a la regla móvil, no descarta la de color.
+     */
+    public function test_el_cajon_conserva_la_transicion_de_color_de_los_temas(): void
+    {
+        $css = $this->hoja();
+
+        $this->assertMatchesRegularExpression(
+            '/aside\.sidebar-alpha\s*\{[^{}]*transition:[^{}]*background-color[^{}]*border-color/s',
+            $css,
+            '`aside.sidebar-alpha` ya no conserva las transiciones de color de los temas.'
+        );
+    }
+
+    /**
+     * El cajón no vuelve a esconderse con `visibility`.
+     *
+     * La transición retrasada de `visibility` que dejaría ver el deslizamiento
+     * de salida no es fiable en todos los motores, y aquí la barra quedaba
+     * visible tras cerrarse. Se aparta con `inert`, que es una garantía.
+     */
+    public function test_el_cajon_sigue_sin_esconderse_con_visibility(): void
+    {
+        $css = $this->hoja();
+
+        $this->assertSame(
+            0,
+            preg_match('/\.menu-lateral[^{}]*\{[^{}]*visibility\s*:/s', $css),
+            'El cajón ha vuelto a esconderse con `visibility`: se aparta con `inert`.'
+        );
+    }
+
+    /**
+     * El movimiento reducido deja el deslizamiento instantáneo.
+     *
+     * La sección 8 anula `transition-duration` de TODO el documento con
+     * `!important`, así que la especificidad de la regla ganadora no puede
+     * contrarrestarla: quien pida menos movimiento ve el cajón aparecer sin
+     * deslizarse, que es exactamente lo que pide.
+     */
+    public function test_el_movimiento_reducido_deja_el_cajon_instantaneo(): void
     {
         $css = $this->hoja();
 
         $this->assertSame(
             1,
-            preg_match('/\.menu-lateral\s*\{[^{}]*transition:\s*transform\b/s', $css),
-            'El cajón no se mueve con una transición de `transform`.'
-        );
-
-        $this->assertSame(
-            0,
-            preg_match('/\.menu-lateral[^{}]*\{[^{}]*visibility\s*:/s', $css),
-            'El cajón ha vuelto a esconderse con `visibility`, que en este motor no es fiable: se aparta con `inert`.'
+            preg_match(
+                '/@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{.*?transition-duration:\s*0\.001ms\s*!important/s',
+                $css
+            ),
+            'El bloque de movimiento reducido ya no deja el deslizamiento sin duración.'
         );
     }
 }

@@ -1456,6 +1456,20 @@ aside.sidebar-alpha {
     z-index: 50;
     height: 100vh;
     transform: translateX(-100%);
+
+    /* El deslizamiento vive aquí, en la regla que de verdad gana la cascada.
+       `aside.sidebar-alpha` declara su propia `transition` con más clases en
+       el mismo tipo de elemento y, por especificidad (0-0-2-1 > 0-0-1-1),
+       pisaba la de `.menu-lateral`: el cajón se movía con `transform` pero sin
+       animarse. Esta regla reúne en una sola declaración el deslizamiento con
+       los tokens de movimiento compartidos y las transiciones de color que
+       necesitan los temas claro y oscuro al cambiarse (la misma duración que
+       traía `aside.sidebar-alpha`). En `prefers-reduced-motion: reduce` la
+       sección 8 la deja en 0,001 ms por `!important`. */
+    transition:
+      transform var(--movimiento-duracion) var(--movimiento-curva),
+      background-color 0.4s ease,
+      border-color 0.4s ease;
   }
 
   html.js .menu-lateral[data-abierto='true'] {
