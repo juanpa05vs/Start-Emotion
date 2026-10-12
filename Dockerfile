@@ -65,4 +65,4 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD wget -qO- http://127.0.0.1/up || exit 1
 
-ENTRYPOINT ["sh", "-c", "php artisan config:cache && php artisan storage:link || true && php artisan migrate --force && exec supervisord -c /etc/supervisord.conf"]
+ENTRYPOINT ["sh", "-c", "php artisan config:cache && (php artisan storage:link || true) && php artisan migrate --force && exec supervisord -c /etc/supervisord.conf"]
