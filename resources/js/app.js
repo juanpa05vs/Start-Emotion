@@ -19,6 +19,13 @@ const sinMovimiento = () =>
 
 const DURACION_MODULO = 200;
 
+/* La curva es la MISMA que `--movimiento-curva` en `resources/css/app.css`: el
+ * lenguaje de movimiento de la aplicación tiene una sola curva, y este es el
+ * único sitio que la reescribe porque WAAPI necesita el valor en JavaScript, no
+ * puede leer una variable CSS. Si cambia allí, cambia aquí; por eso tiene
+ * nombre propio en lugar de ir suelta dentro de la llamada. */
+const CURVA_MODULO = 'cubic-bezier(0.16, 1, 0.3, 1)';
+
 /* Aviso de que el módulo ya es visible y medible.
  *
  * Sin esto, cualquier cosa que necesite dimensiones reales —una gráfica, un
@@ -110,7 +117,7 @@ function conectarModulos() {
         ],
         {
           duration: DURACION_MODULO,
-          easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+          easing: CURVA_MODULO,
         }
       );
 
@@ -387,10 +394,257 @@ function conectarIntensidad() {
   });
 }
 
+/* ── Paneles plegables ──────────────────────────────────────────────────────
+ * El detalle de una anotación del historial se abre y se cierra con una
+ * animación de altura. Se escribe con `Element.animate()` y no en CSS por el
+ * mismo motivo que las pestañas: hay que esperar a que la altura llegue a cero
+ * antes de esconder la fila, y eso es una promesa.
+ *
+ * Solo se animan la altura y la opacidad; el ancho no se toca. El alto de
+ * partida se MIDE antes de animar, de modo que el panel se adapta a su
+ * contenido —una nota corta o larga— sin un valor fijo que se quede corto.
+ *
+ * Con movimiento reducido no hay animación: la fila se muestra u oculta de
+ * golpe, que es justo lo que ha pedido quien tiene activada esa preferencia. */
+function conectarPlegables() {
+  document.querySelectorAll('[data-plegable]').forEach((boton) => {
+    const id = boton.dataset.plegableObjetivo;
+    const panel = id ? document.getElementById(id) : null;
+    if (!panel) return;
+
+    const cuerpo = panel.querySelector('[data-plegable-cuerpo]') ?? panel;
+
+    // El estado se lee de la clase `hidden` que ya trae la fila en el marcado
+    // —no del atributo booleano `hidden`: el proyecto oculta con la clase de
+    // Tailwind, y el atributo nunca llega a ponerse.
+    const plegado = () => panel.classList.contains('hidden');
+    let animacion = null;
+
+    // Cancelar y limpiar deja el cuerpo como recién plegado, sin alturas en
+    // línea que sobrevivan al siguiente clic.
+    const despejar = () => {
+      if (animacion) {
+        animacion.cancel();
+        animacion = null;
+      }
+      cuerpo.style.height = '';
+      cuerpo.style.overflow = '';
+    };
+
+    const animar = (desde, hasta, alTerminar) => {
+      const actual = cuerpo.animate(
+        [
+          { height: `${desde}px`, opacity: desde === 0 ? 0 : 1 },
+          { height: `${hasta}px`, opacity: hasta === 0 ? 0 : 1 },
+        ],
+        { duration: DURACION_MODULO, easing: CURVA_MODULO, fill: 'both' }
+      );
+
+      animacion = actual;
+
+      actual.finished
+        .catch(() => {})
+        .then(() => {
+          // Si otra animación ha tomado el relevo, esta ya no manda: solo
+          // limpia y esconde quien sigue siendo la actual.
+          if (animacion !== actual) return;
+          cuerpo.style.height = '';
+          cuerpo.style.overflow = '';
+          animacion = null;
+          actual.cancel();
+          if (alTerminar) alTerminar();
+        });
+    };
+
+    const abrir = () => {
+      despejar();
+      panel.classList.remove('hidden');
+      boton.setAttribute('aria-expanded', 'true');
+
+      if (sinMovimiento()) return;
+
+      const alto = cuerpo.offsetHeight;
+      cuerpo.style.overflow = 'hidden';
+      cuerpo.style.height = '0px';
+      animar(0, alto);
+    };
+
+    const cerrar = () => {
+      despejar();
+      boton.setAttribute('aria-expanded', 'false');
+
+      if (sinMovimiento()) {
+        panel.classList.add('hidden');
+        return;
+      }
+
+      const alto = cuerpo.offsetHeight;
+      cuerpo.style.overflow = 'hidden';
+      animar(alto, 0, () => {
+        panel.classList.add('hidden');
+      });
+    };
+
+    boton.addEventListener('click', () => {
+      if (plegado()) abrir();
+      else cerrar();
+    });
+  });
+}
+
+/* ── Cajón lateral ─────────────────────────────────────────────────────────
+ *
+ * Por debajo de `lg` la barra de navegación se vuelve un cajón modal: se
+ * superpone al contenido, lo oscurece con un velo, bloquea el scroll del
+ * documento y contiene el foco dentro mientras está abierto. En `lg` recupera
+ * su sitio de columna fija y todo esto se apaga.
+ *
+ * El estado cerrado no es solo un desplazamiento: en el CSS la barra sale de
+ * la pantalla, pero lo que de verdad la aparta del teclado y del lector de
+ * pantalla es `inert`, que aquí se pone y se quita. Con el cajón cerrado sus
+ * enlaces no reciben Tab ni se anuncian; abierto, vuelven a estar disponibles.
+ * El resto lo resuelve la hoja de estilo, y por eso abrir y cerrar deprisa no
+ * puede dejar ningún estado a medias.
+ *
+ * Toda la gestión de foco —entrar al abrir, contenerlo con Tab, devolverlo al
+ * cerrar— vive aquí, porque es lo único que el CSS no puede hacer.
+ */
+function conectarMenuLateral() {
+  const disparador = document.getElementById('menu-lateral-disparador');
+  const cerrarBoton = document.getElementById('menu-lateral-cerrar');
+  const barra = document.getElementById('barra-lateral');
+  const velo = document.getElementById('menu-lateral-velo');
+
+  if (!disparador || !barra || !velo) return;
+
+  // El mismo umbral que `lg` en Tailwind (`64rem`): una sola frontera.
+  const escritorio = window.matchMedia('(min-width: 64rem)');
+  const primerFoco = cerrarBoton ?? barra;
+
+  let abierto = false;
+
+  const enfocables = () =>
+    Array.from(
+      barra.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+    );
+
+  const bloquearScroll = (bloquear) => {
+    document.documentElement.style.overflow = bloquear ? 'hidden' : '';
+  };
+
+  /* Vuelve al estado cerrado. Es idempotente a propósito: se llama al cruzar el
+   * umbral, al pulsar el disparador dos veces seguidas y al cerrar durante una
+   * animación, y en ningún caso debe quedar velo, foco atrapado o scroll
+   * bloqueado colgando. */
+  const limpiar = ({ devolverFoco = false } = {}) => {
+    abierto = false;
+
+    barra.removeAttribute('data-abierto');
+    barra.removeAttribute('role');
+    barra.removeAttribute('aria-modal');
+    velo.hidden = true;
+    disparador.setAttribute('aria-expanded', 'false');
+    /* Cerrado en móvil, el cajón sale del foco y del árbol de accesibilidad:
+     * no basta con sacarlo de la pantalla, porque sus enlaces seguirían
+     * recibiendo Tab. En escritorio es una columna normal y no se aparta. */
+    barra.inert = !escritorio.matches;
+    bloquearScroll(false);
+
+    if (devolverFoco && !escritorio.matches) {
+      disparador.focus({ preventScroll: true });
+    }
+  };
+
+  const abrir = () => {
+    if (abierto || escritorio.matches) return;
+    abierto = true;
+
+    barra.setAttribute('data-abierto', 'true');
+    barra.inert = false;
+    /* Semántica de diálogo modal solo mientras está abierto: el cajón atrapa el
+     * foco y oscurece el fondo, así que se anuncia como tal. Cerrado vuelve a
+     * ser el `aside` de siempre, sin un rol de diálogo colgando. */
+    barra.setAttribute('role', 'dialog');
+    barra.setAttribute('aria-modal', 'true');
+
+    velo.hidden = false;
+    disparador.setAttribute('aria-expanded', 'true');
+    bloquearScroll(true);
+    primerFoco.focus({ preventScroll: true });
+  };
+
+  disparador.addEventListener('click', () => {
+    if (abierto) limpiar({ devolverFoco: true });
+    else abrir();
+  });
+
+  velo.addEventListener('click', () => limpiar({ devolverFoco: true }));
+  cerrarBoton?.addEventListener('click', () => limpiar({ devolverFoco: true }));
+
+  // Elegir un enlace cierra el cajón. No se devuelve el foco: la navegación
+  // recarga la página y el foco iría a un botón que ya no existe.
+  barra.addEventListener('click', (evento) => {
+    if (evento.target.closest('a[href]')) limpiar();
+  });
+
+  document.addEventListener('keydown', (evento) => {
+    if (!abierto) return;
+
+    if (evento.key === 'Escape') {
+      evento.preventDefault();
+      limpiar({ devolverFoco: true });
+      return;
+    }
+
+    if (evento.key !== 'Tab') return;
+
+    const destinos = enfocables();
+
+    if (destinos.length === 0) {
+      evento.preventDefault();
+      barra.focus({ preventScroll: true });
+      return;
+    }
+
+    const primero = destinos[0];
+    const ultimo = destinos[destinos.length - 1];
+    const activo = document.activeElement;
+
+    if (evento.shiftKey && (activo === primero || activo === barra)) {
+      evento.preventDefault();
+      ultimo.focus({ preventScroll: true });
+    } else if (!evento.shiftKey && activo === ultimo) {
+      evento.preventDefault();
+      primero.focus({ preventScroll: true });
+    }
+  });
+
+  /* Al cruzar el umbral se limpia el estado en los dos sentidos. Si al pasar a
+   * móvil el foco estaba dentro de la barra, se devuelve al disparador para no
+   * dejarlo en un elemento que acaba de quedar `visibility: hidden`. */
+  const alCambiarUmbral = () => {
+    limpiar({
+      devolverFoco: !escritorio.matches && barra.contains(document.activeElement),
+    });
+  };
+
+  if (typeof escritorio.addEventListener === 'function') {
+    escritorio.addEventListener('change', alCambiarUmbral);
+  } else {
+    escritorio.addListener(alCambiarUmbral);
+  }
+
+  limpiar();
+}
+
 function iniciar() {
   conectarModulos();
   conectarEnviosUnicos();
   conectarIntensidad();
+  conectarPlegables();
+  conectarMenuLateral();
 }
 
 if (document.readyState === 'loading') {

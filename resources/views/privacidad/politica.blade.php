@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Política de Privacidad | S-Emotion</title>
+    <meta name="description" content="Cómo S-Emotion trata y protege tus datos: quién puede verlos, en qué casos y siempre con tu autorización.">
 
     {{-- Esta página carga `app.css` pero no usa `layouts/app`, así que antes de
          mover el sistema de diseño a `app.css` sus clases `font-orbitron` y

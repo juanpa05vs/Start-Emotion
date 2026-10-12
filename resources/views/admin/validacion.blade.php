@@ -45,7 +45,7 @@
          con un tamaño constante, un valor de cuatro dígitos y otro de uno se
          leen igual de rápido, que es justo lo que no debe pasar en un panel de
          métricas. --}}
-    <section class="dato-tarjeta overflow-hidden rounded-panel border">
+    <section class="aparece dato-tarjeta overflow-hidden rounded-panel border">
         <div class="grid divide-y divide-white/5 sm:grid-cols-2 sm:divide-x lg:grid-cols-4 lg:divide-y-0">
 
             <div class="px-5 py-4">
@@ -165,7 +165,7 @@
                             </th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-white/5">
+                    <tbody class="fundido divide-y divide-white/5">
                         @foreach($clases as $real)
                             <tr class="transition-colors hover:bg-white/[0.02]">
                                 <th scope="row" class="p-3 text-left text-[12px] font-semibold text-gray-300">
@@ -228,7 +228,7 @@
 
     {{-- Los dos paneles de abajo son cifras de cobertura: qué volumen hay
          detrás de cada cifra de arriba. --}}
-    <div class="grid gap-5 lg:grid-cols-2">
+    <div class="aparece-grupo grid gap-5 lg:grid-cols-2">
 
         {{-- DISTRIBUCIÓN DE EVALUACIONES SISCO --}}
         <section class="surface rounded-panel p-5">
@@ -241,7 +241,7 @@
                  evaluaciones una por una con participante, estado afectivo y
                  nivel de estrés: historial clínico individual que el
                  administrador no tiene por qué ver. --}}
-            <div class="space-y-2">
+            <div class="aparece-grupo space-y-2">
                 @php
                     $etiquetasEstres = [
                         'bajo' => 'Bajo',
@@ -273,8 +273,8 @@
                                 {{ $etiqueta }}
                             </span>
                             <div class="h-2 flex-1 overflow-hidden rounded-pill bg-white/5">
-                                <div class="h-full rounded-pill {{ $barraEstres[$clave] }}"
-                                     style="width: {{ $porcentaje }}%"></div>
+                                <div class="medidor-relleno h-full rounded-pill {{ $barraEstres[$clave] }}"
+                                     style="--valor: {{ $porcentaje / 100 }}"></div>
                             </div>
                             <span class="w-14 shrink-0 text-right text-[12px] tabular-nums text-gray-400">
                                 {{ $conteo }} · {{ $porcentaje }}%

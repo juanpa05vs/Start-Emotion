@@ -38,7 +38,7 @@
                 :url="route('psicologia.invitaciones')" />
         </div>
     @else
-        <div class="space-y-3">
+        <div class="aparece-grupo space-y-3">
             @foreach ($consentimientos as $c)
                 @php $estudiante = $c->estudiante; @endphp
                 {{-- `.tarjeta` sobre el enlace entero, no sobre una fila de tabla. Cada

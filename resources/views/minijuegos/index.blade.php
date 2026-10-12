@@ -14,7 +14,7 @@
         </p>
     </div>
 
-    <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+    <div class="aparece-grupo grid gap-5 md:grid-cols-2 lg:grid-cols-3">
 
         {{-- ── CÓDIGO ANÓMALO ────────────────────────────────────────────
              Lleva `.tarjeta`: es lo único de esta pantalla que se puede abrir, y

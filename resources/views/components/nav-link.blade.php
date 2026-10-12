@@ -23,8 +23,9 @@ $labelClasses = $activo
      indicio era un fondo casi transparente, que en una columna de nueve
      entradas no bastaba para saber dónde estabas. --}}
 <a href="{{ $href }}"
+   @if ($activo) aria-current="page" @endif
    {{ $attributes->merge([
-       'class' => "group relative flex items-center gap-4 rounded-control px-4 py-2.5 pl-5 transition-colors duration-200 border before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-pill before:bg-accent before:opacity-0 before:transition-opacity $classes",
+       'class' => "group relative flex items-center gap-4 rounded-control px-4 py-2.5 pl-5 nav-enlace border before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-pill before:bg-accent before:opacity-0 before:transition-opacity $classes",
    ]) }}>
 
     <i class="fa-solid {{ $icon }} text-sm {{ $iconClasses }} transition-colors" aria-hidden="true"></i>

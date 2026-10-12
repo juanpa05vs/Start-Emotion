@@ -70,6 +70,36 @@ class HojaDeEstiloTest extends TestCase
         '.intensidad-nivel[data-nivel=alto]',
         '@keyframes latido',
         '@media (prefers-reduced-motion:reduce)',
+        // Las entradas de bloque. Igual que el movimiento bajo el cursor, una
+        // entrada que falta no rompe nada: el bloque simplemente aparece de
+        // golpe. Por eso conviene tenerla en la misma lista que el resto.
+        '@keyframes entrada-sube',
+        '.aparece,.aparece-grupo>*{',
+        '.aparece-grupo',
+        '@media (prefers-reduced-motion:no-preference)',
+        // Los medidores de datos de la ETAPA 3: las barras que crecen de cero a
+        // su valor y el fundido uniforme de la matriz. Igual que el resto, si
+        // faltan no rompen nada y por eso conviene tenerlas vigiladas.
+        '@keyframes medidor-crece',
+        '@keyframes fundido',
+        '.medidor-relleno',
+        '.fundido{',
+        // La ETAPA 4: la respuesta de la opción de emoción, el realce de la fila
+        // marcada, el detalle plegable y el menú lateral. Como el resto, son
+        // reglas cuyo efecto desaparece en silencio si se pierden.
+        '.opcion-emocion',
+        '.nav-enlace',
+        '[data-plegable]',
+        // La ETAPA 5: la cascada y las acciones de la portada. Como el resto,
+        // son reglas cuyo efecto desaparece en silencio si se pierden.
+        '.acciones-portada',
+        '.enlace-portada',
+        // El cajón lateral responsive (ETAPA 6, H-5b): el cajón, la cabecera
+        // móvil y el velo. Si alguna se pierde, la barra se queda fuera de su
+        // sitio o encima del contenido, y ninguna otra prueba mira el CSS.
+        '.menu-lateral',
+        '.menu-cabecera{',
+        '.menu-velo{',
     ];
 
     private function fuente(): string
@@ -350,7 +380,7 @@ class HojaDeEstiloTest extends TestCase
 
         $faltan = [];
 
-        foreach (['.btn:hover', '.btn:active', '.tarjeta:hover', '.modulo-pestana:hover', '.selector:hover'] as $estado) {
+        foreach (['.btn:hover', '.btn:active', '.tarjeta:hover', '.modulo-pestana:hover', '.selector:hover', '.nav-enlace:hover'] as $estado) {
             if (! preg_match('/'.preg_quote($estado, '/').'[^{}]*\{[^{}]*transform:\s*none/', $bloque)) {
                 $faltan[] = $estado.' no anula su `transform` dentro del bloque de movimiento reducido.';
             }
@@ -800,6 +830,583 @@ class HojaDeEstiloTest extends TestCase
             $medidas,
             $medidasDefinidas,
             'Las medidas de botón han cambiado sin que nadie lo decidiera: '.implode(', ', $medidasDefinidas)
+        );
+    }
+
+    /**
+     * Una entrada solo mueve opacidad y desplazamiento.
+     *
+     * Es la misma disciplina que el resto del movimiento: nada que fuerce
+     * recálculo de maquetación en cada fotograma. Un `height`, un `width` o un
+     * `filter` en el keyframe de entrada empuja el contenido de al lado y hace
+     * que el bloque no «aparezca», sino que «empuje», y con veinte bloques en
+     * cascada la página entera tiembla.
+     */
+    public function test_las_entradas_solo_mueven_opacidad_y_desplazamiento(): void
+    {
+        $css = (string) preg_replace('#/\*.*?\*/#s', '', $this->fuente());
+
+        $this->assertSame(
+            1,
+            preg_match('/@keyframes\s+entrada-sube\s*\{(.*?)^\}/ms', $css, $bloque),
+            'No se ha encontrado el cuerpo de `@keyframes entrada-sube`.'
+        );
+
+        preg_match_all('/([a-z-]+)\s*:/', $bloque[1], $propiedades);
+
+        $permitidas = ['opacity', 'transform'];
+
+        $this->assertGreaterThanOrEqual(2, count($propiedades[1]), 'El keyframe de entrada apenas declara propiedades.');
+
+        $this->assertSame(
+            [],
+            array_values(array_diff(array_unique($propiedades[1]), $permitidas)),
+            'El keyframe de entrada anima propiedades que no son opacidad o desplazamiento, y eso re-maqueta el contenido vecino en cada fotograma.'
+        );
+    }
+
+    /**
+     * La entrada no se activa salvo que se acepte movimiento.
+     *
+     * No es que se apague después: el bloque entero va dentro de
+     * `prefers-reduced-motion: no-preference`, así que quien ha pedido menos
+     * movimiento no ve un fotograma intermedio. La prueba lo fija porque es
+     * fácil sacar la regla de la consulta al añadir una utilidad nueva, y
+     * entonces quien pidió menos movimiento vuelve a recibir la cascada.
+     */
+    public function test_las_entradas_solo_se_activan_si_se_acepta_movimiento(): void
+    {
+        $css = $this->fuente();
+
+        if (! preg_match('/@media\s*\(prefers-reduced-motion:\s*no-preference\)\s*\{/', $css, $m, PREG_OFFSET_CAPTURE)) {
+            $this->fail('Las entradas no están dentro de `prefers-reduced-motion: no-preference`.');
+        }
+
+        $resto = substr($css, $m[0][1]);
+        $fin = strpos($resto, "\n}");
+        $bloque = $fin === false ? $resto : substr($resto, 0, $fin);
+
+        $this->assertStringContainsString('.aparece', $bloque, 'La utilidad `.aparece` no está dentro de la consulta `no-preference`.');
+        $this->assertStringContainsString('.aparece-grupo', $bloque, 'La utilidad `.aparece-grupo` no está dentro de la consulta `no-preference`.');
+    }
+
+    /**
+     * La cascada de un grupo se detiene en el duodécimo hijo.
+     *
+     * Un grupo puede ser una tabla de treinta filas. Si cada fila esperase su
+     * turno, la última entraría casi un segundo y medio después de la primera y
+     * la tabla no se podría leer hasta entonces. El desfase solo tiene sentido
+     * en los primeros bloques, los que el ojo sigue a la vez: a partir del
+     * decimotercero vuelve a cero y todas las filas restantes entran juntas.
+     */
+    public function test_la_cascada_de_un_grupo_se_detiene_en_doce(): void
+    {
+        $css = (string) preg_replace('#/\*.*?\*/#s', '', $this->fuente());
+
+        for ($k = 1; $k <= 12; $k++) {
+            $this->assertSame(
+                1,
+                preg_match('/\.aparece-grupo\s*>\s*:nth-child\('.$k.'\)\s*\{\s*--paso:\s*'.($k - 1).'\s*;?\s*\}/', $css),
+                'Al hijo número '.$k.' de un grupo le toca el paso '.($k - 1).' y no lo tiene.'
+            );
+        }
+
+        $this->assertSame(
+            1,
+            preg_match('/\.aparece-grupo\s*>\s*:nth-child\(n\+13\)\s*\{\s*--paso:\s*0\s*;?\s*\}/', $css),
+            'La cascada no se reinicia a partir del hijo decimotercero: una tabla larga tardaría una eternidad en quedar legible.'
+        );
+
+        $this->assertSame(
+            0,
+            preg_match('/\.aparece-grupo\s*>\s*:nth-child\(14\)\s*\{/', $css),
+            'Hay un peldaño número 14 en la cascada: la escalera se ha estirado sin que nadie lo decidiera.'
+        );
+    }
+
+    /**
+     * La entrada rellena hacia atrás, no hacia delante.
+     *
+     * `backwards` mantiene oculto el bloque mientras le toca el turno y, al
+     * terminar, lo devuelve a su estado natural. Con `forwards` o `both`, el
+     * `transform: none` del último fotograma se quedaría pegado y anularía el
+     * levantamiento al pasar el ratón: la animación de entrada habría roto el
+     * hover de cada tarjeta y cada botón que la llevase. Ese fallo no lo ve
+     * ninguna otra prueba.
+     */
+    public function test_la_entrada_no_deja_pegado_el_desplazamiento(): void
+    {
+        $css = (string) preg_replace('#/\*.*?\*/#s', '', $this->fuente());
+
+        preg_match_all('/animation:\s*entrada-sube\s+([^;]+);/', $css, $m);
+
+        $this->assertGreaterThanOrEqual(
+            2,
+            count($m[1]),
+            'No se han encontrado las dos utilidades que usan `entrada-sube` (`.aparece` y `.aparece-grupo > *`).'
+        );
+
+        foreach ($m[1] as $corta) {
+            $this->assertStringContainsString('backwards', $corta, 'La entrada no rellena hacia atrás: el bloque quedaría invisible mientras espera su turno.');
+            $this->assertStringNotContainsString('both', $corta, 'La entrada usa `both` y dejaría pegado el `transform` final, rompiendo el hover.');
+            $this->assertStringNotContainsString('forwards', $corta, 'La entrada usa `forwards` y dejaría pegado el `transform` final, rompiendo el hover.');
+        }
+    }
+
+    /**
+     * Con movimiento reducido, la entrada se apaga del todo.
+     *
+     * La consulta `no-preference` ya impide que la animación llegue a
+     * activarse, pero esta regla es la red de seguridad: devuelve el bloque a
+     * su estado natural —visible— sin fotograma intermedio, y cubre el caso de
+     * un navegador que ignore la consulta. Es análoga a la regla que anula el
+     * movimiento bajo el cursor.
+     */
+    public function test_las_entradas_se_apagan_del_todo_si_se_pide_menos_animacion(): void
+    {
+        $css = $this->fuente();
+
+        if (! preg_match('/@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{/', $css, $m, PREG_OFFSET_CAPTURE)) {
+            $this->fail('No hay ninguna regla para `prefers-reduced-motion: reduce` en la hoja de estilos.');
+        }
+
+        $resto = substr($css, $m[0][1]);
+        $fin = strpos($resto, "\n}");
+        $bloque = $fin === false ? $resto : substr($resto, 0, $fin);
+
+        $this->assertSame(
+            1,
+            preg_match('/\.aparece[^{]*\{[^{}]*animation:\s*none/', $bloque),
+            'Con movimiento reducido, las entradas no se anulan del todo: el contenido podría quedar a medio aparecer.'
+        );
+    }
+
+    /**
+     * Un medidor solo mueve `transform`, y la matriz solo opacidad.
+     *
+     * Es la misma disciplina que el resto del movimiento: nada que re-maquete el
+     * contenido vecino en cada fotograma. Un medidor que creciera animando su
+     * `width` empujaría la cifra que tiene al lado; por eso el relleno mide
+     * siempre el carril entero y lo que se desplaza es el bloque.
+     *
+     * El fundido de la matriz es solo opacidad a propósito: la matriz se lee de
+     * un vistazo y ninguno de sus valores puede esperar su turno para ser
+     * legible.
+     */
+    public function test_los_medidores_solo_mueven_transform_y_la_matriz_opacidad(): void
+    {
+        $css = (string) preg_replace('#/\*.*?\*/#s', '', $this->fuente());
+
+        $this->assertSame(
+            1,
+            preg_match('/@keyframes\s+medidor-crece\s*\{(.*?)^\}/ms', $css, $medidor),
+            'No se ha encontrado el cuerpo de `@keyframes medidor-crece`.'
+        );
+
+        preg_match_all('/([a-z-]+)\s*:/', $medidor[1], $propiedadesMedidor);
+
+        $this->assertSame(
+            [],
+            array_values(array_diff(array_unique($propiedadesMedidor[1]), ['transform'])),
+            'El medidor anima propiedades que no son `transform`, y eso re-maqueta la cifra que tiene al lado.'
+        );
+
+        $this->assertSame(
+            1,
+            preg_match('/@keyframes\s+fundido\s*\{(.*?)^\}/ms', $css, $fundido),
+            'No se ha encontrado el cuerpo de `@keyframes fundido`.'
+        );
+
+        preg_match_all('/([a-z-]+)\s*:/', $fundido[1], $propiedadesFundido);
+
+        $this->assertSame(
+            [],
+            array_values(array_diff(array_unique($propiedadesFundido[1]), ['opacity'])),
+            'El fundido de la matriz anima algo que no es opacidad: sus columnas no deben moverse al aparecer.'
+        );
+    }
+
+    /**
+     * Los medidores y el fundido solo se activan si se acepta movimiento.
+     */
+    public function test_los_medidores_solo_se_animan_si_se_acepta_movimiento(): void
+    {
+        $css = $this->fuente();
+
+        if (! preg_match('/@media\s*\(prefers-reduced-motion:\s*no-preference\)\s*\{/', $css, $m, PREG_OFFSET_CAPTURE)) {
+            $this->fail('Los medidores no están dentro de `prefers-reduced-motion: no-preference`.');
+        }
+
+        $resto = substr($css, $m[0][1]);
+        $fin = strpos($resto, "\n}");
+        $bloque = $fin === false ? $resto : substr($resto, 0, $fin);
+
+        $this->assertStringContainsString('.medidor-relleno', $bloque, 'El medidor `.medidor-relleno` no está dentro de `no-preference`.');
+        $this->assertStringContainsString('.fundido', $bloque, 'El fundido `.fundido` no está dentro de `no-preference`.');
+    }
+
+    /**
+     * Con movimiento reducido, el medidor y el fundido se apagan del todo.
+     */
+    public function test_los_medidores_se_apagan_del_todo_si_se_pide_menos_animacion(): void
+    {
+        $css = $this->fuente();
+
+        if (! preg_match('/@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{/', $css, $m, PREG_OFFSET_CAPTURE)) {
+            $this->fail('No hay ninguna regla para `prefers-reduced-motion: reduce` en la hoja de estilos.');
+        }
+
+        $resto = substr($css, $m[0][1]);
+        $fin = strpos($resto, "\n}");
+        $bloque = $fin === false ? $resto : substr($resto, 0, $fin);
+
+        $this->assertSame(
+            1,
+            preg_match('/\.medidor-relleno[^{]*\{[^{}]*animation:\s*none/', $bloque),
+            'Con movimiento reducido, el medidor no se anula del todo: la barra podría quedarse a medio crecer.'
+        );
+
+        $this->assertSame(
+            1,
+            preg_match('/\.fundido[^{]*\{[^{}]*animation:\s*none/', $bloque),
+            'Con movimiento reducido, el fundido de la matriz no se anula del todo.'
+        );
+    }
+
+    /**
+     * Las barras de datos crecen desde `--valor` y ya no animan su ancho.
+     *
+     * El número que se ve al lado sigue siendo exactamente el mismo; lo único que
+     * cambia es cómo se pinta el relleno. Se comprueba sobre las dos vistas que
+     * tienen barras de datos (historial y distribución), y se vigila que no
+     * vuelva el `style="width: …%"`, que es el patrón que re-maquetaba.
+     */
+    public function test_las_barras_de_datos_usan_el_medidor_y_no_el_ancho(): void
+    {
+        $historial = (string) file_get_contents(resource_path('views/historial.blade.php'));
+        $validacion = (string) file_get_contents(resource_path('views/admin/validacion.blade.php'));
+
+        $this->assertStringContainsString('medidor-relleno', $historial, 'La barra de energía del historial no usa `.medidor-relleno`.');
+        $this->assertStringContainsString('--valor:', $historial, 'La barra de energía del historial no recibe su valor por `--valor`.');
+
+        $this->assertStringContainsString('medidor-relleno', $validacion, 'La barra de distribución no usa `.medidor-relleno`.');
+        $this->assertStringContainsString('--valor:', $validacion, 'La barra de distribución no recibe su valor por `--valor`.');
+
+        $this->assertStringNotContainsString('style="width: {{ $item->energia }}%"', $historial, 'La barra de energía volvió a animar su ancho.');
+        $this->assertStringNotContainsString('style="width: {{ $porcentaje }}%"', $validacion, 'La barra de distribución volvió a animar su ancho.');
+    }
+
+    /**
+     * La matriz aparece de una vez, sin escalonar sus filas.
+     *
+     * Se leen valores; un desfase por fila retrasa la lectura de las últimas y no
+     * aporta nada. La matriz usa `.fundido` (solo opacidad, sin desfase) y no la
+     * cascada `.aparece-grupo`, que sí sigue usándose en la lista de distribución.
+     */
+    public function test_la_matriz_aparece_de_una_vez_sin_escalonar(): void
+    {
+        $validacion = (string) file_get_contents(resource_path('views/admin/validacion.blade.php'));
+
+        $this->assertStringContainsString('class="fundido divide-y', $validacion, 'La matriz de confusión ya no aparece con el fundido uniforme.');
+        $this->assertStringNotContainsString('class="aparece-grupo divide-y', $validacion, 'La matriz de confusión ha vuelto a escalonar sus filas.');
+        $this->assertStringContainsString('class="aparece-grupo space-y-2"', $validacion, 'La lista de distribución perdió su cascada.');
+    }
+
+    /**
+     * El gráfico respeta el movimiento reducido y configura su curva.
+     *
+     * La gráfica se dibuja una vez al abrir su módulo; la preferencia se consulta
+     * en ese momento y no al cargar. Si falta la comprobación, quien ha pedido
+     * menos movimiento ve igualmente la línea trazándose punto a punto.
+     */
+    public function test_el_grafico_configura_su_animacion_y_respeta_el_movimiento_reducido(): void
+    {
+        $dashboard = (string) file_get_contents(resource_path('views/dashboard.blade.php'));
+
+        $this->assertStringContainsString('prefers-reduced-motion: reduce', $dashboard, 'El gráfico no consulta la preferencia de movimiento.');
+        $this->assertStringContainsString('animation: animar', $dashboard, 'El gráfico no condiciona su animación a la preferencia de movimiento.');
+        $this->assertStringContainsString("easing: 'easeOutQuart'", $dashboard, 'El gráfico no declara su curva de transición.');
+        $this->assertStringContainsString('delay: (contexto)', $dashboard, 'El gráfico no escalona el trazado de sus puntos.');
+    }
+
+    /**
+     * La cuenta atrás conserva su lógica y solo suaviza el pintado del ancho.
+     *
+     * Se mantiene `width` y no se pasa a `transform`: el relleno lleva un degradado
+     * y un `scaleX` lo comprimiría. La transición no toca el valor, la precisión
+     * ni la duración del juego, que siguen calculándose igual en `pintarReloj`.
+     */
+    public function test_la_cuenta_atras_conserva_su_ancho_y_solo_suaviza_el_pintado(): void
+    {
+        $diagnostico = (string) file_get_contents(resource_path('views/minijuegos/diagnostico.blade.php'));
+
+        $this->assertStringContainsString('medidor-progreso', $diagnostico, 'La cuenta atrás no usa la transición discreta del medidor de progreso.');
+        $this->assertStringContainsString('barra.style.width', $diagnostico, 'La cuenta atrás dejó de pintarse por `width`: la lógica del juego ha cambiado.');
+
+        // La barra de la cuenta atrás no debe pasar a transformarse: deformaría
+        // su degradado. Se comprueba sobre la propia línea del marcado.
+        $this->assertSame(
+            1,
+            preg_match('/id="temp-bar"\s*\n?\s*class="[^"]*medidor-progreso[^"]*"[\s\S]*?style="width: 100%"/', $diagnostico),
+            'La barra de la cuenta atrás ha cambiado de técnica: debe conservar su `width` inicial.'
+        );
+    }
+
+    /**
+     * La emoción marcada se distingue de las demás sin mover la rejilla.
+     *
+     * El color del estado marcado ya lo aporta Tailwind con `peer-checked:`. La
+     * ETAPA 4 añade la respuesta de tamaño, y lo hace con `transform` para no
+     * re-maquetar las nueve cajas, además de encender el icono. Las dos
+     * transiciones se miden con el reloj común, no con un valor suelto.
+     */
+    public function test_la_opcion_de_emocion_responde_con_el_sistema(): void
+    {
+        $css = $this->fuente();
+
+        $this->assertSame(
+            1,
+            preg_match('/\.opcion-emocion:has\(input:checked\)\s*>\s*span\s*\{[^{}]*transform:\s*scale\(/', $css),
+            'La opción de emoción marcada no se separa con un `transform`.'
+        );
+
+        $this->assertSame(
+            1,
+            preg_match('/\.opcion-emocion\s*>\s*span\s*\{[^{}]*var\(--movimiento-duracion\)/', $css),
+            'La opción de emoción no mide su transición con la duración del sistema.'
+        );
+
+        $this->assertSame(
+            1,
+            preg_match('/\.opcion-emocion:has\(input:checked\)\s*>\s*span\s*>\s*i\s*\{[^{}]*opacity:\s*1/', $css),
+            'El icono de la emoción marcada no se enciende del todo.'
+        );
+    }
+
+    /**
+     * La fila marcada del historial se distingue también por el fondo.
+     *
+     * El cuadro ya cambia de color al marcarse, pero en una fila de cinco
+     * columnas la marca se pierde de vista. El realce sale de `:has()`, sobre el
+     * mismo `checked` que ya conoce el lector de pantalla.
+     */
+    public function test_la_fila_marcada_del_historial_se_realza(): void
+    {
+        $css = $this->fuente();
+
+        $this->assertSame(
+            1,
+            preg_match('/tbody tr:has\(\.record-checkbox:checked\)\s*\{/', $css),
+            'La fila marcada del historial no recibe un realce propio.'
+        );
+    }
+
+    /**
+     * El detalle del historial se pliega dentro del sistema de movimiento.
+     *
+     * La fila ya no se muestra con un simple `hidden`: el botón lleva los datos
+     * que conectan la animación y el guion central la resuelve reutilizando la
+     * misma duración y curva. La guarda vigila las tres piezas —los datos en la
+     * vista, la función en el guion y su llamada al arrancar— y que no quede un
+     * manejador de plegado en línea.
+     */
+    public function test_el_detalle_del_historial_se_pliega_con_el_sistema(): void
+    {
+        $vista = (string) file_get_contents(resource_path('views/historial.blade.php'));
+        $guion = (string) file_get_contents(resource_path('js/app.js'));
+
+        $this->assertStringContainsString('data-plegable', $vista, 'El botón de detalle no conecta con el sistema de plegado.');
+        $this->assertStringContainsString('data-plegable-cuerpo', $vista, 'El cuerpo plegable no está marcado para poder medir su altura.');
+        $this->assertStringNotContainsString('toggleTelemetryPayload', $vista, 'El historial conserva un manejador de plegado propio.');
+
+        $this->assertStringContainsString('function conectarPlegables', $guion, 'El guion no define la conexión de paneles plegables.');
+        $this->assertStringContainsString('sinMovimiento()', $guion, 'El plegado no consulta la preferencia de movimiento.');
+        $this->assertStringContainsString("classList.add('hidden')", $guion, 'El plegado no conmuta la clase `hidden` que usa el marcado.');
+        $this->assertStringContainsString('conectarPlegables();', $guion, 'El plegado no se conecta al arrancar.');
+    }
+
+    /**
+     * La escala Likert mide su transición con el mismo reloj que el resto.
+     *
+     * Antes usaba `0.15s ease`, una duración propia: el mismo control respondía
+     * a un ritmo que no era el de ningún otro. La guarda lo comprueba sobre la
+     * fuente, para que no vuelva a colarse un valor suelto.
+     */
+    public function test_la_escala_likert_usa_el_movimiento_compartido(): void
+    {
+        $css = $this->fuente();
+
+        $this->assertSame(
+            1,
+            preg_match('/\.escala-likert label\s*\{[^{}]*var\(--movimiento-duracion\)/', $css),
+            'La escala Likert no usa la duración del sistema.'
+        );
+
+        $this->assertSame(
+            0,
+            preg_match('/\.escala-likert label\s*\{[^{}]*0\.15s/', $css),
+            'La escala Likert conserva su duración suelta de 0.15s.'
+        );
+    }
+
+    /**
+     * La portada entra en cascada y sus acciones usan el sistema de movimiento.
+     *
+     * La entrada de los seis bloques reutiliza `.aparece-grupo`, que ya vive
+     * dentro de `prefers-reduced-motion: no-preference` y se anula por completo
+     * con movimiento reducido: no es un sistema aparte. La microinteracción de
+     * la flecha se escribe sobre el propio icono, con `transform` y solo bajo
+     * `hover: hover`; su transición NO empieza por `.btn` —si lo hiciera, esta
+     * clase tendría un reloj propio y la guarda del movimiento compartido lo
+     * denunciaría—. Y el enlace de privacidad dejó `transition-colors` de
+     * Tailwind para medirse con los mismos tokens.
+     */
+    public function test_la_portada_usa_el_sistema_de_movimiento_compartido(): void
+    {
+        $vista = (string) file_get_contents(resource_path('views/welcome.blade.php'));
+        $css = (string) preg_replace('#/\*.*?\*/#s', '', $this->fuente());
+
+        $this->assertStringContainsString(
+            'aparece-grupo',
+            $vista,
+            'La portada perdió la cascada de entrada: falta `aparece-grupo` en el contenedor.'
+        );
+
+        $this->assertStringContainsString(
+            'acciones-portada',
+            $vista,
+            'Las acciones de la portada no están agrupadas para la microinteracción del CTA.'
+        );
+
+        $this->assertStringContainsString(
+            'enlace-portada',
+            $vista,
+            'El enlace de privacidad no usa la clase que lo mide con el sistema.'
+        );
+
+        $this->assertStringNotContainsString(
+            'transition-colors',
+            $vista,
+            'La portada conserva una transición suelta de Tailwind en vez de los tokens del sistema.'
+        );
+
+        // La flecha se adelanta con `transform`, dentro de `hover: hover`.
+        $this->assertSame(
+            1,
+            preg_match('/@media\s*\(hover:\s*hover\)\s*\{[^{}]*\.acciones-portada\s+\.btn--principal:hover\s*>\s*i:last-child\s*\{[^{}]*transform:\s*translateX\(3px\)/', $css),
+            'La flecha del CTA no se adelanta con `transform` dentro de la consulta de puntero.'
+        );
+
+        // Y se anula del todo con movimiento reducido.
+        if (! preg_match('/@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{/', $css, $m, PREG_OFFSET_CAPTURE)) {
+            $this->fail('No hay ninguna regla para `prefers-reduced-motion: reduce` en la hoja de estilos.');
+        }
+
+        $resto = substr($css, $m[0][1]);
+        $fin = strpos($resto, "\n}");
+        $bloque = $fin === false ? $resto : substr($resto, 0, $fin);
+
+        $this->assertSame(
+            1,
+            preg_match('/\.acciones-portada[^{}]*\{[^{}]*transform:\s*none/', $bloque),
+            'Con movimiento reducido, la flecha del CTA no se anula del todo y saltaría tres píxeles de golpe.'
+        );
+    }
+
+    /**
+     * El latido tiene un solo ritmo, escrito una vez.
+     *
+     * La cuenta atrás de puntos del juego y el escalón «alto» de la barra de
+     * intensidad laten igual. Antes cada regla repetía el ritmo a mano, de modo
+     * que ajustarlo exigía tocar dos sitios que podían divergir. Ahora hay dos
+     * tokens y las dos reglas los referencian. El comentario que explica el
+     * cambio no menciona el valor numérico a propósito: contarlo aquí daría un
+     * falso positivo con el propio texto que documenta la decisión.
+     */
+    public function test_el_latido_comparte_un_unico_ritmo(): void
+    {
+        $css = $this->fuente();
+
+        $this->assertSame(
+            1,
+            substr_count($css, '1.6s'),
+            'El ritmo del latido está suelto en más de un sitio: debería vivir solo en el token `--movimiento-latido`.'
+        );
+
+        $this->assertStringContainsString(
+            '--movimiento-latido: 1.6s;',
+            $css,
+            'No se encuentra el token `--movimiento-latido`.'
+        );
+
+        $this->assertSame(
+            2,
+            substr_count($css, 'var(--movimiento-latido) var(--movimiento-latido-curva) infinite'),
+            'Las dos reglas que laten no referencian el mismo token de ritmo.'
+        );
+    }
+
+    /**
+     * No queda código de animación sin uso.
+     *
+     * `@keyframes glow` y `@keyframes float` —con sus tokens `--animate-glow-pulse`
+     * y `--animate-float`— y la utilidad `text-outline` estaban definidos pero no
+     * los usaba ninguna vista ni un solo guion, y Tailwind no los emitía en el CSS
+     * compilado. Se han retirado; esta guarda evita que vuelvan en silencio. De
+     * paso fija que las animaciones que SÍ se usan siguen en el build, para que
+     * una limpieza futura no se lleve por delante una viva.
+     */
+    public function test_no_queda_codigo_de_animacion_sin_uso(): void
+    {
+        $css = $this->fuente();
+
+        $muertos = [
+            '@keyframes glow',
+            '@keyframes float',
+            '--animate-glow-pulse',
+            '--animate-float',
+            '@utility text-outline',
+            '.animate-float',
+        ];
+
+        foreach ($muertos as $muerto) {
+            $this->assertStringNotContainsString($muerto, $css, 'Sigue en la hoja el código sin uso: '.$muerto);
+        }
+
+        $compilada = $this->compilada();
+
+        foreach (['.animate-glow-pulse', '@keyframes glow', '@keyframes float', '.text-outline'] as $muerto) {
+            $this->assertStringNotContainsString($muerto, $compilada, 'Sigue en el CSS compilado el código sin uso: '.$muerto);
+        }
+
+        foreach (['@keyframes latido', '@keyframes entrada-sube', '@keyframes medidor-crece', '@keyframes fundido', '.animate-pulse', '.animate-ping'] as $vivo) {
+            $this->assertStringContainsString($vivo, $compilada, 'Desapareció del build una animación que sí se usa: '.$vivo);
+        }
+    }
+
+    /**
+     * La tarjeta del minijuego acota las propiedades que anima.
+     *
+     * Traía la transición implícita de todas las propiedades. La tarjeta solo
+     * cambia cuatro —`transform`, `opacity`, `background-color` y
+     * `border-color`—, así que se declaran explícitas: los colores y los bordes
+     * siguen animándose y lo único que desaparece es el barrido de propiedades
+     * que nadie cambia.
+     */
+    public function test_la_tarjeta_del_minijuego_acota_sus_propiedades(): void
+    {
+        $diagnostico = (string) file_get_contents(resource_path('views/minijuegos/diagnostico.blade.php'));
+
+        $this->assertStringNotContainsString(
+            'transition-all',
+            $diagnostico,
+            'La tarjeta del minijuego volvió a la transición implícita de todas las propiedades.'
+        );
+
+        $this->assertStringContainsString(
+            'transition-[transform,opacity,background-color,border-color]',
+            $diagnostico,
+            'La tarjeta del minijuego no declara la lista explícita de propiedades.'
         );
     }
 }

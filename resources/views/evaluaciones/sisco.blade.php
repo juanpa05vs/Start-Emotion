@@ -24,7 +24,7 @@
 
     {{-- Resultado de la última vez. Solo aparece si ya se respondió alguna. --}}
     @if (! empty($ultimaEvaluacion))
-        <div class="dato-tarjeta mb-7 flex flex-wrap items-center gap-x-8 gap-y-4 rounded-panel border px-5 py-4">
+        <div class="aparece dato-tarjeta mb-7 flex flex-wrap items-center gap-x-8 gap-y-4 rounded-panel border px-5 py-4">
             <div>
                 <p class="dato-rotulo mb-1.5">Tu última encuesta</p>
                 <p class="mt-1 text-[14px] font-semibold adaptive-title">

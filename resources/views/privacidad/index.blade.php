@@ -140,7 +140,8 @@
                 icono="fa-user-lock"
                 titulo="No compartes nada con nadie"
                 mensaje="Ningún profesional tiene acceso a tus datos. Si tu profesional te dio un código, puedes autorizarlo con el formulario de arriba; si no, esta pantalla vacía es la respuesta correcta."
-                detalle="Puedes compartir y retirar el acceso tantas veces como quieras, sin dar explicaciones." />
+                detalle="Puedes compartir y retirar el acceso tantas veces como quieras, sin dar explicaciones."
+                :nivel="3" />
         </div>
     @endforelse
 

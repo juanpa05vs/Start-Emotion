@@ -37,7 +37,7 @@
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-white/5">
+                <tbody class="aparece-grupo divide-y divide-white/5">
                     @foreach ($usuarios as $user)
                         <tr class="transition-colors hover:bg-white/[0.02]">
                             {{-- Identidad de la cuenta. Sin edad y sin correo: no hacen falta

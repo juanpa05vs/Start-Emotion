@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'S-Emotion | Acceso')</title>
+    <meta name="description" content="@yield('description', 'Accede a S-Emotion o crea tu cuenta para registrar cómo te sientes y decidir qué compartes y con quién.')">
 
     {{-- Las mismas tres fuentes que el panel principal. Antes este layout
          cargaba solo Orbitron y además forzaba `body { font-family: Orbitron }`,

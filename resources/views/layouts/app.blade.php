@@ -10,6 +10,7 @@
          dos formas distintas: quien navega por pestañas o marcadores veía
          «Start-Emotion» en unas y «S-Emotion» en otras. --}}
     <title>@yield('title', 'S-Emotion | Acompañamiento emocional')</title>
+    <meta name="description" content="@yield('description', 'S-Emotion es tu espacio para registrar cómo te sientes, ver tu evolución y decidir qué compartes y con quién.')">
 
     {{-- RECURSOS EXTERNOS --}}
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
@@ -17,6 +18,11 @@
 
     {{-- [MODO LUMINOSO]: Interceptor temprano para evitar el parpadeo oscuro al recargar --}}
     <script>
+        /* Marca de «hay JavaScript». El cajón lateral (H-5b) la necesita: sin
+           ella, la barra vuelve a fluir como bloque y sigue siendo navegable en
+           lugar de quedarse tras un cajón que no podría abrirse. */
+        document.documentElement.classList.add('js');
+
         if (localStorage.getItem('theme') === 'light') {
             document.documentElement.classList.add('light-mode');
         } else {
@@ -81,13 +87,51 @@
 <body class="min-h-screen selection:bg-accent-soft selection:text-white overflow-x-hidden">
     <div class="scanline"></div>
 
-    <div class="flex relative z-10">
+    <div class="flex flex-col relative z-10 lg:flex-row">
         {{-- SIDEBAR --}}
         @auth
-        <aside class="sidebar-alpha w-72 border-r min-h-screen backdrop-blur-2xl sticky top-0 h-screen flex flex-col shadow-[20px_0_50px_-20px_rgba(0,0,0,0.5)]">
+        {{-- CABECERA MÓVIL (H-5b)
+             Por debajo de `lg` la barra lateral se convierte en un cajón; esta
+             franja es su disparador. Va en el flujo normal —no flotante— para
+             no tapar títulos, formularios ni controles, y desaparece en
+             escritorio, donde la barra ya está siempre visible. --}}
+        <header class="menu-cabecera sticky top-0 z-30 flex items-center justify-between gap-3 border-b px-4 py-3 backdrop-blur-2xl lg:hidden">
+            <a href="{{ $user ? route($user->rutaDeInicio()) : route('dashboard') }}" class="group flex items-center">
+                <span class="font-orbitron text-lg font-black tracking-tighter adaptive-title">
+                    S-<span class="text-accent-text">EMOTION</span>
+                </span>
+            </a>
+
+            <button type="button"
+                    id="menu-lateral-disparador"
+                    class="menu-lateral-disparador flex h-11 w-11 items-center justify-center rounded-control border border-white/10 text-gray-300 transition-colors hover:text-white"
+                    aria-controls="barra-lateral"
+                    aria-expanded="false"
+                    aria-label="Abrir el menú de navegación">
+                <i class="fa-solid fa-bars" aria-hidden="true"></i>
+            </button>
+        </header>
+
+        {{-- VELO DEL CAJÓN (H-5b). Cubre el contenido cuando el cajón está
+             abierto y cierra al pulsarlo. Es decorativo: no recibe foco ni se
+             anuncia a los lectores de pantalla. --}}
+        <div id="menu-lateral-velo" class="menu-velo" hidden aria-hidden="true"></div>
+
+        <aside id="barra-lateral" class="sidebar-alpha menu-lateral w-72 border-r min-h-screen h-screen backdrop-blur-2xl flex flex-col shadow-[20px_0_50px_-20px_rgba(0,0,0,0.5)] lg:sticky lg:top-0 lg:z-10" tabindex="-1" aria-label="Navegación principal">
 
             {{-- LOGO SECTOR --}}
-            <div class="px-6 pt-6 pb-5 mb-3">
+            <div class="relative px-6 pt-6 pb-5 mb-3">
+                {{-- Cierre del cajón, solo en móvil. El velo y Escape también
+                     cierran, pero en una pantalla táctil hace falta un botón
+                     explícito y visible. --}}
+                <button type="button"
+                        id="menu-lateral-cerrar"
+                        data-menu-foco-inicial
+                        class="absolute right-4 top-5 flex h-11 w-11 items-center justify-center rounded-control border border-white/10 text-gray-300 transition-colors hover:text-white lg:hidden"
+                        aria-label="Cerrar el menú de navegación">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+
                 {{-- Va a la pantalla de inicio de cada tipo de cuenta, no siempre
                      a `dashboard`: ese panel es del estudiante y el administrador
                      recibiría un 403 al hacer clic en el logo. --}}
@@ -217,21 +261,21 @@
         @endauth
 
         {{-- MAIN CONTENT --}}
-        <main class="flex-1 px-5 py-7 sm:px-8 sm:py-9 relative">
+        <main class="min-w-0 flex-1 px-5 py-7 sm:px-8 sm:py-9 relative">
             <div class="max-w-7xl mx-auto">
 
                 {{-- Avisos. Antes `animate-pulse` los hacía parpadear sin parar y
                      el texto iba en mayúsculas de 10px. Los dos van en el mismo
                      sitio porque aquí es donde se anuncia un error. --}}
                 @if(session('success'))
-                    <div class="mb-6 flex items-start gap-3 rounded-panel border border-accent/30 bg-accent-soft px-4 py-3.5" role="status">
+                    <div class="aparece mb-6 flex items-start gap-3 rounded-panel border border-accent/30 bg-accent-soft px-4 py-3.5" role="status">
                         <i class="fa-solid fa-circle-check text-accent-text text-sm mt-0.5" aria-hidden="true"></i>
                         <p class="text-[13px] font-semibold adaptive-title leading-relaxed">{{ session('success') }}</p>
                     </div>
                 @endif
 
                 @if(session('error'))
-                    <div class="mb-6 flex items-start gap-3 rounded-panel border border-rose-500/40 bg-rose-500/10 px-4 py-3.5" role="alert">
+                    <div class="aparece mb-6 flex items-start gap-3 rounded-panel border border-rose-500/40 bg-rose-500/10 px-4 py-3.5" role="alert">
                         <i class="fa-solid fa-triangle-exclamation text-rose-400 text-sm mt-0.5" aria-hidden="true"></i>
                         <p class="text-[13px] font-semibold text-rose-200 leading-relaxed">{{ session('error') }}</p>
                     </div>

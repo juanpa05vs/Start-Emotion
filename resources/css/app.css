@@ -80,19 +80,6 @@
   /* Resplandor de acento. Va en `@theme` por el mismo motivo que los colores:
      así `shadow-accent-glow/50` admite opacidad. */
   --shadow-accent-glow: 0 0 15px rgba(34, 211, 238, 0.3);
-
-  --animate-glow-pulse: glow 2s infinite alternate;
-  --animate-float: float 3s ease-in-out infinite;
-
-  @keyframes glow {
-    0% { filter: drop-shadow(0 0 5px #22D3EE); }
-    100% { filter: drop-shadow(0 0 20px #A855F7); }
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-15px); }
-  }
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -457,7 +444,7 @@ body {
 }
 .dato-estado[data-nivel='estable']   { color: var(--color-accent-text); }
 .dato-estado[data-nivel='aviso']     { color: var(--color-amber-400); }
-.dato-estado[data-nivel='critico']   { color: var(--color-rose-400); animation: latido 1.6s ease-in-out infinite; }
+.dato-estado[data-nivel='critico']   { color: var(--color-rose-400); animation: latido var(--movimiento-latido) var(--movimiento-latido-curva) infinite; }
 .dato-estado[data-nivel='resuelto']  { color: var(--color-emerald-400); }
 .dato-estado[data-nivel='agotado']   { color: var(--color-rose-300); }
 
@@ -542,7 +529,10 @@ body {
   border-radius: 0.75rem;
   cursor: pointer;
   user-select: none;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color var(--movimiento-duracion) var(--movimiento-curva),
+    border-color var(--movimiento-duracion) var(--movimiento-curva),
+    color var(--movimiento-duracion) var(--movimiento-curva);
 }
 
 .escala-likert label:hover { border-color: color-mix(in srgb, var(--color-white) 40%, transparent); }
@@ -557,6 +547,79 @@ body {
 .escala-likert input[type='radio']:focus-visible + label {
   outline: 2px solid var(--color-accent-text);
   outline-offset: 2px;
+}
+
+/* ── Opción de emoción ──────────────────────────────────────────────────────
+ * La rejilla de emociones del registro. Cada opción es un `label` con un
+ * `radio` invisible y una caja visible. El color del estado marcado ya lo pone
+ * Tailwind con `peer-checked:`; aquí solo vive lo que esa variante no alcanza:
+ * la respuesta de tamaño y el ritmo de la transición.
+ *
+ * La caja marcada se separa con `transform` y no con márgenes: crecer un 3 %
+ * no re-maqueta la rejilla, y la opción elegida se lee como tal sin que las
+ * vecinas se muevan de sitio. El icono, que en reposo va al 70 %, se enciende
+ * del todo cuando su opción es la marcada.
+ *
+ * El estado se lee con `:has()`, igual que el realce de la fila del historial:
+ * el atributo que cambia —el `checked` del radio— es el mismo que ya conoce el
+ * lector de pantalla, en lugar de una clase que tendría que poner el guion. */
+.opcion-emocion > span {
+  transition:
+    color var(--movimiento-duracion) var(--movimiento-curva),
+    background-color var(--movimiento-duracion) var(--movimiento-curva),
+    border-color var(--movimiento-duracion) var(--movimiento-curva),
+    transform var(--movimiento-duracion) var(--movimiento-curva);
+}
+
+.opcion-emocion:has(input:checked) > span {
+  transform: scale(1.03);
+}
+
+.opcion-emocion:has(input:checked) > span > i {
+  opacity: 1;
+}
+
+/* La fila del historial cuya casilla está marcada. El cuadro ya cambia al
+ * marcarse, pero en una fila de cinco columnas la marca se pierde de vista;
+ * un realce tenue del fondo la devuelve sin mover nada. */
+tbody tr:has(.record-checkbox:checked) {
+  background-color: color-mix(in srgb, var(--color-accent) 7%, transparent);
+}
+
+/* ── Panel plegable ─────────────────────────────────────────────────────────
+ * El detalle de una anotación del historial. La altura la anima
+ * `resources/js/app.js`; aquí solo vive la flecha, que gira según el estado
+ * `aria-expanded` que ya lleva el botón. Así el indicio visual sale del mismo
+ * atributo que anuncia el lector de pantalla, no de una clase paralela. */
+[data-plegable] i {
+  transition: transform var(--movimiento-duracion) var(--movimiento-curva);
+}
+
+[data-plegable][aria-expanded='true'] i {
+  transform: rotate(180deg);
+}
+
+/* ── Menú lateral ───────────────────────────────────────────────────────────
+ * El único movimiento es un desplazamiento corto hacia la derecha al pasar el
+ * ratón, y solo en el enlace que NO es la sección actual: la entrada activa ya
+ * se distingue por fondo, filete y barra, y desplazarla sugeriría que se puede
+ * abandonar. Va con `transform` para no alterar el ancho de la columna. */
+.nav-enlace {
+  transition:
+    color var(--movimiento-duracion) var(--movimiento-curva),
+    background-color var(--movimiento-duracion) var(--movimiento-curva),
+    border-color var(--movimiento-duracion) var(--movimiento-curva),
+    transform var(--movimiento-duracion) var(--movimiento-curva);
+}
+
+@media (hover: hover) {
+  .nav-enlace:hover {
+    transform: translateX(3px);
+  }
+}
+
+.nav-enlace[aria-current='page']:hover {
+  transform: none;
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -589,6 +652,22 @@ body {
   --movimiento-elevacion: 2px;
   --movimiento-escala: 1.02;
   --movimiento-escala-pulsada: 0.95;
+
+  /* El latido de las cifras que avisan: la cuenta atrás de puntos del juego y
+     el escalón «alto» de la barra de intensidad. Los dos comparten este ritmo
+     desde un único sitio; antes cada regla lo repetía a mano. */
+  --movimiento-latido: 1.6s;
+  --movimiento-latido-curva: ease-in-out;
+
+  /* Entradas de bloque. Son tres tokens y no uno porque un bloque que aparece
+     no dura lo mismo que un botón que responde: 200 ms es lo que tarda una
+     microinteracción, pero una tarjeta que entra necesita algo más para que el
+     ojo la siga sin que la espera se note. El escalón es el desfase entre dos
+     bloques de un mismo grupo, y existe para que un grupo se lea como una
+     secuencia y no como un parpadeo simultáneo. */
+  --movimiento-entrada-duracion: 320ms;
+  --movimiento-entrada-escalon: 40ms;
+  --movimiento-entrada-distancia: 10px;
 
   /* Sombra de elevación. Dos capas: una de contacto, que es la que da peso, y
      otra teñida con el acento, que es la que da la sensación de luz propia. En
@@ -649,6 +728,144 @@ html.light-mode {
 .selector:active,
 .modulo-pestana:active:not([aria-disabled='true']) {
   transform: scale(var(--movimiento-escala-pulsada));
+}
+
+/* ── Portada ────────────────────────────────────────────────────────────────
+ * El icono del botón principal de la portada se adelanta tres píxeles al pasar
+ * el ratón. Es un gesto sobre la FLECHA, no sobre el botón: la elevación de
+ * `.btn` no cambia y el recorrido corto solo dice hacia dónde lleva la acción.
+ *
+ * El selector no empieza por `.btn` a propósito. La transición de los botones
+ * se declara una sola vez en la lista compartida de arriba, y una regla
+ * `.btn … { transition }` daría a esta clase su propio reloj: exactamente lo que
+ * la prueba `test_el_movimiento_compartido_no_se_declara_dos_veces` vigila.
+ * ─────────────────────────────────────────────────────────────────────────── */
+.acciones-portada .btn--principal > i:last-child {
+  transition: transform var(--movimiento-duracion) var(--movimiento-curva);
+}
+
+@media (hover: hover) {
+  .acciones-portada .btn--principal:hover > i:last-child {
+    transform: translateX(3px);
+  }
+}
+
+/* El enlace de privacidad de la portada comparte el reloj del sistema. Antes
+   traía `transition-colors` de Tailwind —150 ms y su propia lista de
+   propiedades—, que es justo el valor suelto que el sistema de movimiento
+   evita: el mismo enlace respondía a un ritmo que no era el de ningún otro
+   control. */
+.enlace-portada {
+  transition: color var(--movimiento-duracion) var(--movimiento-curva);
+}
+
+/* ── Entradas ───────────────────────────────────────────────────────────────
+ * La aparición de un bloque al cargar la pantalla. Es el movimiento más
+ * discreto de todos: opacidad y un desplazamiento de pocos píxeles, nunca más.
+ * Se reutilizan los tokens de movimiento de arriba para que no convivan dos
+ * sistemas con tiempos distintos: la curva es la misma y la duración solo sube
+ * un escalón, porque una entrada tiene que dar tiempo a que el ojo la siga.
+ *
+ * `backwards` y no `both`/`forwards`. El relleno hacia ATRÁS mantiene oculto el
+ * bloque mientras le toca su turno de la escalera y, en cuanto la animación
+ * termina, el elemento vuelve a su estado natural. Con `forwards`, el
+ * `transform: none` del último fotograma se quedaría pegado y anularía el
+ * levantamiento al pasar el ratón sobre una tarjeta o un botón: la animación
+ * de entrada habría roto el hover de todo lo que la lleve.
+ *
+ * Va dentro de `prefers-reduced-motion: no-preference`. Quien ha pedido menos
+ * movimiento no llega a tener la animación —no es que se apague a posteriori—,
+ * así que ve el contenido de una vez, sin parpadeo ni retraso.
+ *
+ * Dos utilidades y ninguna regla suelta más:
+ *   .aparece         un bloque suelto.
+ *   .aparece-grupo   un contenedor cuyos hijos entran en cascada.
+ */
+@keyframes entrada-sube {
+  from { opacity: 0; transform: translateY(var(--movimiento-entrada-distancia)); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Medidores de datos ─────────────────────────────────────────────────────
+ * El relleno de una barra de datos: energía del historial, distribución de
+ * resultados. Un medidor que aparece ya lleno no dice que mide una cantidad;
+ * uno que crece de cero a su valor lo dice sin una sola palabra.
+ *
+ * No se anima `width`. Animar el ancho re-maqueta en cada fotograma y, además,
+ * deforma el relleno: con `width` la barra cambia de tamaño; con `transform` se
+ * desplaza. El relleno mide SIEMPRE el ancho del carril y lo que se mueve es el
+ * propio bloque hacia la izquierda, de modo que lo que asoma por la derecha es
+ * su extremo redondeado de verdad, sin estirarse. El carril lleva
+ * `overflow: hidden`, así que la parte que sale por la izquierda no se ve.
+ *
+ * `--valor` va de 0 a 1 y lo escribe la plantilla en el propio relleno —no es
+ * una cifra clínica distinta de la que ya se muestra al lado: es la misma.
+ */
+@keyframes medidor-crece {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(calc((var(--valor, 1) - 1) * 100%)); }
+}
+
+.medidor-relleno {
+  width: 100%;
+  transform: translateX(calc((var(--valor, 1) - 1) * 100%));
+}
+
+/* Fundido uniforme, para cuando lo que aparece son DATOS que se leen de un
+ * vistazo —la matriz de confusión— y no un bloque que entra. Solo opacidad y
+ * sin desfase: ningún valor espera su turno para poder leerse. */
+@keyframes fundido {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .aparece {
+    animation: entrada-sube var(--movimiento-entrada-duracion) var(--movimiento-curva) backwards;
+    animation-delay: calc(var(--paso, 0) * var(--movimiento-entrada-escalon));
+  }
+
+  /* En un grupo, cada hijo entra un paso después del anterior. Se escalonan
+     los DOCE primeros; a partir del decimotercero el desfase vuelve a cero,
+     para que una tabla de treinta filas no tarde casi un segundo en quedar
+     legible y para que la cascada no se convierta en una espera. */
+  .aparece-grupo > * {
+    animation: entrada-sube var(--movimiento-entrada-duracion) var(--movimiento-curva) backwards;
+    animation-delay: calc(var(--paso, 0) * var(--movimiento-entrada-escalon));
+  }
+
+  .aparece-grupo > :nth-child(1)    { --paso: 0; }
+  .aparece-grupo > :nth-child(2)    { --paso: 1; }
+  .aparece-grupo > :nth-child(3)    { --paso: 2; }
+  .aparece-grupo > :nth-child(4)    { --paso: 3; }
+  .aparece-grupo > :nth-child(5)    { --paso: 4; }
+  .aparece-grupo > :nth-child(6)    { --paso: 5; }
+  .aparece-grupo > :nth-child(7)    { --paso: 6; }
+  .aparece-grupo > :nth-child(8)    { --paso: 7; }
+  .aparece-grupo > :nth-child(9)    { --paso: 8; }
+  .aparece-grupo > :nth-child(10)   { --paso: 9; }
+  .aparece-grupo > :nth-child(11)   { --paso: 10; }
+  .aparece-grupo > :nth-child(12)   { --paso: 11; }
+  .aparece-grupo > :nth-child(n+13) { --paso: 0; }
+
+  .medidor-relleno {
+    animation: medidor-crece var(--movimiento-entrada-duracion) var(--movimiento-curva) backwards;
+    /* Hereda `--paso` de la fila que lo contiene, así que el relleno crece al
+       mismo ritmo con que entra su fila en una tabla o en una lista. */
+    animation-delay: calc(var(--paso, 0) * var(--movimiento-entrada-escalon));
+  }
+
+  .fundido {
+    animation: fundido var(--movimiento-entrada-duracion) var(--movimiento-curva) backwards;
+  }
+
+  /* La cuenta atrás de la actividad se vacía a saltos de un segundo. Esta
+     transición la desliza entre salto y salto sin tocar el valor, la precisión
+     ni la duración del juego: solo suaviza el pintado del ancho, que en una
+     barra de degradado conserva el aspecto exacto del relleno. */
+  .medidor-progreso {
+    transition: width 1s linear;
+  }
 }
 
 /* ── Selector segmentado ───────────────────────────────────────────────────
@@ -857,7 +1074,7 @@ html.light-mode .intensidad {
 
 .intensidad-nivel[data-nivel='bajo']  { color: var(--text-muted); }
 .intensidad-nivel[data-nivel='medio'] { color: var(--color-amber-400); }
-.intensidad-nivel[data-nivel='alto']  { color: var(--color-rose-400); animation: latido 1.6s ease-in-out infinite; }
+.intensidad-nivel[data-nivel='alto']  { color: var(--color-rose-400); animation: latido var(--movimiento-latido) var(--movimiento-latido-curva) infinite; }
 
 /* ── Cifras y datos ─────────────────────────────────────────────────────────
  * Lo que el usuario tiene que mirar primero se escribe más grande, con la
@@ -1110,11 +1327,6 @@ html.light-mode .dato-tarjeta {
   border-radius: 0.25rem;
 }
 
-/* Utilidad heredada, en uso por `perfil/configuracion.blade.php`. */
-@utility text-outline {
-  -webkit-text-stroke: 1px rgba(34, 211, 238, 0.5);
-}
-
 /* ───────────────────────────────────────────────────────────────────────────
    7. CAPAS DEL PANEL
    ─────────────────────────────────────────────────────────────────────────── */
@@ -1160,10 +1372,26 @@ aside.sidebar-alpha {
     scroll-behavior: auto !important;
   }
 
-  /* Estas dos no se pueden apagar con `animation: none` porque su estado final
-     es invisible, así que se dejan fijas en su posición final. */
-  .animate-float { transform: none !important; }
+  /* El velo de escaneo no tiene un `@keyframes` que anular: se oculta del todo,
+     que es lo que de verdad pide quien ha activado «reducir movimiento». */
   .scanline { display: none !important; }
+
+  /* Las entradas de bloque SÍ se pueden apagar del todo, y así se hace. La
+     consulta `no-preference` de arriba ya impide que lleguen a activarse, pero
+     un navegador que ignore esa consulta —o un cambio futuro en la hoja— no
+     debe poder dejar contenido a medio aparecer. `animation: none` devuelve el
+     bloque a su estado natural —visible— sin un fotograma intermedio. */
+  .aparece,
+  .aparece-grupo > * {
+    animation: none !important;
+  }
+
+  /* Los medidores de datos también se apagan del todo: el relleno queda en su
+     valor —el `transform` base— sin crecer, y la matriz aparece de una vez. */
+  .medidor-relleno,
+  .fundido {
+    animation: none !important;
+  }
 
   /* El movimiento bajo el cursor también se apaga, y no basta con dejar la
      transición a 0 ms como hace la regla de arriba. Con la transición anulada el
@@ -1173,6 +1401,7 @@ aside.sidebar-alpha {
      el filete sí cambian, porque un cambio de color instantáneo no incomoda a
      nadie. */
   @media (hover: hover) {
+    .nav-enlace:hover,
     .btn:hover:not(:disabled),
     .selector:hover,
     .modulo-pestana:hover:not([aria-selected='true']),
@@ -1181,6 +1410,12 @@ aside.sidebar-alpha {
       transform: none;
       box-shadow: none;
     }
+
+    /* La flecha de la portada tampoco se adelanta. Con la transición anulada
+       seguiría saltando tres píxeles de golpe, y eso no es «sin movimiento». */
+    .acciones-portada .btn--principal:hover > i:last-child {
+      transform: none;
+    }
   }
 
   .btn:active:not(:disabled),
@@ -1188,4 +1423,71 @@ aside.sidebar-alpha {
   .modulo-pestana:active:not([aria-selected='true']) {
     transform: none;
   }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   9. CAJÓN LATERAL RESPONSIVE (H-5b)
+
+   Por debajo de `lg` (64rem ≈ 1024 px) la barra deja de ser una columna fija y
+   pasa a ser un cajón superpuesto. Todo el comportamiento del cajón depende de
+   `html.js`, la marca que deja el guion de cabecera: sin JavaScript la barra
+   vuelve a fluir como un bloque y sigue siendo navegable, en vez de quedarse
+   escondida tras un cajón que no podría abrirse.
+
+   Cerrado, el cajón se sale de la pantalla con `transform`. Pero un `translateX`
+   a secas NO basta para la accesibilidad: sus enlaces seguirían en el orden de
+   tabulación y en el árbol de accesibilidad aunque no se vieran. De eso se
+   encarga `inert`, que el guion pone y quita: saca el cajón entero del foco y
+   del árbol a la vez. Se usa `inert` y no `visibility: hidden` porque la
+   transición retrasada de `visibility` que dejaría ver el deslizamiento de
+   salida no es fiable —en pruebas la barra quedó «visible» después de
+   cerrarse—, y una garantía que falla a veces no es una garantía.
+
+   Solo se anima `transform`, la propiedad que no re-maqueta nada.
+   ─────────────────────────────────────────────────────────────────────────── */
+.menu-lateral {
+  transition: transform var(--movimiento-duracion) var(--movimiento-curva);
+}
+
+@media (max-width: 63.999rem) {
+  html.js .menu-lateral {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 50;
+    height: 100vh;
+    transform: translateX(-100%);
+  }
+
+  html.js .menu-lateral[data-abierto='true'] {
+    transform: translateX(0);
+  }
+
+  /* Sin JavaScript no hay cajón: la barra se queda como bloque de navegación
+     normal y el disparador no se muestra, para no dejar un botón muerto. */
+  html:not(.js) .menu-lateral-disparador {
+    display: none;
+  }
+
+  html:not(.js) .menu-lateral {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+  }
+}
+
+/* Cabecera móvil con el disparador. Su fondo y su filete salen de los mismos
+   tokens que la barra, así que los dos modos de color la pintan igual. */
+.menu-cabecera {
+  background-color: var(--bg-sidebar);
+  border-color: var(--border-system);
+}
+
+/* Velo del cajón: fijo, cubre la ventana por encima del contenido (z 40) y por
+   debajo de la barra (z 50). No recibe foco ni se anuncia. */
+.menu-velo {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
 }

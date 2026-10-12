@@ -31,7 +31,12 @@
     <div class="scanline" aria-hidden="true"></div>
 
     <main class="relative z-10 flex-1 flex items-center px-5 py-14 sm:py-20">
-        <div class="w-full max-w-2xl mx-auto">
+        {{-- Los seis bloques de la portada —marca, titular, texto, pasos,
+             acciones y privacidad— entran en cascada con `aparece-grupo`. La
+             utilidad vive una sola vez en `app.css` y solo se activa si el
+             sistema acepta movimiento: sin JavaScript, y con movimiento
+             reducido, el contenido está visible de inmediato. --}}
+        <div class="w-full max-w-2xl mx-auto aparece-grupo">
 
             {{-- Marca. El guion y el nombre van en el acento, que sale del token
                  y no de un hexadecimal fijo: así el cambio de tema también
@@ -88,7 +93,7 @@
 
             {{-- Entradas. Antes eran dos `rounded-pill` del mismo peso, sin
                  jerarquía: no se distinguía cuál era la principal. --}}
-            <div class="mt-11 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+            <div class="mt-11 flex flex-col sm:flex-row items-stretch sm:items-center gap-4 acciones-portada">
                 <x-boton :href="route('register')" tamano="grande" iconoDerecha="arrow-right">
                     Crear una cuenta
                 </x-boton>
@@ -103,7 +108,7 @@
                 Tus datos son tuyos. Ningún profesional puede verlos sin que tú lo
                 autorices, y puedes retirar el acceso cuando quieras.
                 <a href="{{ route('privacidad.politica') }}"
-                   class="inline-flex items-center gap-1.5 font-semibold text-accent-text transition-colors hover:underline underline-offset-4">
+                   class="inline-flex items-center gap-1.5 font-semibold text-accent-text enlace-portada hover:underline underline-offset-4">
                     <i class="fa-solid fa-shield-halved text-[10px]" aria-hidden="true"></i>
                     Leer la política de privacidad
                 </a>

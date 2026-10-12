@@ -17,7 +17,7 @@
 @if (session('status'))
     {{-- Sin rebote. Un aviso que salta y desaparece es ruido; lo que importa es
          que se lea. --}}
-    <div class="mb-6 flex items-start gap-3 rounded-panel border border-accent/30 bg-accent-soft px-4 py-3.5">
+    <div class="aparece mb-6 flex items-start gap-3 rounded-panel border border-accent/30 bg-accent-soft px-4 py-3.5">
         <i class="fa-solid fa-circle-check mt-0.5 text-sm text-accent-text" aria-hidden="true"></i>
         <p class="flex-1 text-[13px] leading-relaxed text-gray-200">{{ session('status') }}</p>
         <button type="button" onclick="this.parentElement.remove()"
@@ -38,7 +38,7 @@
      Este panel NO va dentro de los módulos y queda siempre arriba. Es la
      respuesta a «¿cómo estoy ahora?», y esconderla tras una pestaña obligaría a
      volver atrás para releerla justo después de escribir un registro nuevo. --}}
-<section class="surface dato-tarjeta mb-7 overflow-hidden rounded-panel">
+<section class="aparece surface dato-tarjeta mb-7 overflow-hidden rounded-panel">
     <div class="grid divide-y divide-white/5 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <div class="px-5 py-4">
             <p class="dato-rotulo mb-2">Cómo te sientes</p>
@@ -211,14 +211,14 @@
                              color a ellos no hace nada: el estado marcado se veía en el
                              filete y en el fondo, pero el texto se quedaba gris. --}}
                         @foreach ($opciones as $valor => $opcion)
-                            <label class="group cursor-pointer">
+                            <label class="group cursor-pointer opcion-emocion">
                                 <input type="radio"
                                        name="emocion"
                                        value="{{ $valor }}"
                                        class="peer sr-only"
                                        data-escala="{{ $opcion['escala'] }}"
                                        @if ($loop->first) required @endif>
-                                <span class="flex h-[4.5rem] flex-col items-center justify-center gap-1.5 rounded-control border border-white/10 bg-black/30 px-2 text-center transition-colors
+                                <span class="flex h-[4.5rem] flex-col items-center justify-center gap-1.5 rounded-control border border-white/10 bg-black/30 px-2 text-center
                                              hover:border-white/25
                                              peer-focus-visible:border-accent peer-focus-visible:ring-1 peer-focus-visible:ring-accent
                                              {{ $opcion['marcar'] }}
@@ -378,7 +378,8 @@
                     <x-estado-vacio
                         icono="fa-chart-line"
                         titulo="Todavía no hay una línea que dibujar"
-                        mensaje="En cuanto registres cómo te sientes verás aquí tu intensidad de los últimos siete días." />
+                        mensaje="En cuanto registres cómo te sientes verás aquí tu intensidad de los últimos siete días."
+                        :nivel="3" />
                 @else
                     {{-- El lienzo se pinta al declarar visible este módulo, no al
                          cargar la página. Un `<canvas>` dentro de algo oculto mide
@@ -488,6 +489,13 @@
                 $r->energia,
             ]));
 
+            /* Quien ha pedido menos movimiento no ve la línea dibujarse: aparece
+               entera y de golpe. Se consulta aquí y no al cargar la página
+               porque el gráfico se pinta cuando su módulo se hace visible, que
+               puede ser bastante después, y la preferencia puede haber cambiado
+               con la pestaña ya abierta. */
+            const animar = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
             grafica = new Chart(lienzo.getContext('2d'), {
                 type: 'line',
                 data: {
@@ -510,6 +518,21 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+
+                    /* La gráfica se dibuja una sola vez, al abrir su módulo. La
+                       curva es la misma del resto de la aplicación (`easeOutQuart`
+                       es la más parecida a `--movimiento-curva` que trae
+                       Chart.js), y cada punto entra con un desfase corto para
+                       que la línea se trace de izquierda a derecha en lugar de
+                       aparecer entera. Con movimiento reducido se desactiva. */
+                    animation: animar ? {
+                        duration: 700,
+                        easing: 'easeOutQuart',
+                        delay: (contexto) => (contexto.type === 'data' && contexto.mode === 'default')
+                            ? contexto.dataIndex * 40
+                            : 0,
+                    } : false,
+
                     plugins: {
                         legend: { display: false },
                         tooltip: {

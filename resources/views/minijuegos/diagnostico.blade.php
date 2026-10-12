@@ -86,7 +86,7 @@
          tiempo que queda, no el consumido. --}}
     <div class="mb-6 h-1.5 overflow-hidden rounded-pill border border-white/5 bg-white/5">
         <div id="temp-bar"
-             class="h-full rounded-pill bg-gradient-to-r from-rose-500 via-amber-500 to-accent"
+             class="medidor-progreso h-full rounded-pill bg-gradient-to-r from-rose-500 via-amber-500 to-accent"
              style="width: 100%"></div>
     </div>
 
@@ -108,7 +108,7 @@
                         <p id="clue-sintomas" class="text-[13px] leading-relaxed text-gray-300">Extrayendo datos corporales…</p>
                     </div>
 
-                    <div id="wrapper-detonante" class="rounded-control border border-white/5 bg-white/5 p-3.5 opacity-25 transition-opacity duration-500">
+                    <div id="wrapper-detonante" class="rounded-control border border-dashed border-white/10 bg-white/[0.02] p-3.5 transition-colors duration-500">
                         <p class="mb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-accent-text">
                             2 · Lo que lo provocando
                         </p>
@@ -117,7 +117,7 @@
                         </p>
                     </div>
 
-                    <div id="wrapper-cognitivo" class="rounded-control border border-white/5 bg-white/5 p-3.5 opacity-25 transition-opacity duration-500">
+                    <div id="wrapper-cognitivo" class="rounded-control border border-dashed border-white/10 bg-white/[0.02] p-3.5 transition-colors duration-500">
                         <p class="mb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-accent-text">
                             3 · Lo que te dices
                         </p>
@@ -260,7 +260,12 @@
     /* Clases del tablero. Se declaran como literales porque Tailwind compila
        por texto: una clase construida en tiempo de ejecución no existiría en el
        CSS publicado. */
-    const TARJETA = 'flex h-28 w-full flex-col items-center justify-center rounded-control border border-white/10 bg-black/40 p-4 text-center transition-all duration-500 [transform-style:preserve-3d]';
+    // La transición implícita de todas las propiedades se sustituye por las
+    // CUATRO que la tarjeta cambia de verdad: `transform` (elevación y volteo),
+    // `opacity` (descarte), `background-color` y `border-color` (selección).
+    // Colores y bordes siguen animándose; lo único que desaparece es el barrido
+    // de propiedades que nadie cambia.
+    const TARJETA = 'flex h-28 w-full flex-col items-center justify-center rounded-control border border-white/10 bg-black/40 p-4 text-center transition-[transform,opacity,background-color,border-color] duration-500 [transform-style:preserve-3d]';
     const TARJETA_ENCIMA = 'scale-[1.02] border-accent bg-accent-soft';
     const TARJETA_ENCIMA_TEXTO = 'text-accent-text';
     const TARJETA_APAGADA = 'opacity-20 border-transparent [transform:rotateX(-80deg)]';
@@ -336,8 +341,8 @@
         btnPista.className = 'flex-1 rounded-control border border-accent/40 px-4 py-2.5 text-[11px] font-semibold text-accent-text transition-colors hover:bg-accent-soft';
         document.getElementById('btn-verdict').disabled = false;
 
-        document.getElementById('wrapper-detonante').classList.add('opacity-25');
-        document.getElementById('wrapper-cognitivo').classList.add('opacity-25');
+        bloquearPista('wrapper-detonante');
+        bloquearPista('wrapper-cognitivo');
 
         document.getElementById('clue-sintomas').textContent = emocionSecreta.sintomas;
         document.getElementById('clue-detonante').textContent = 'Todavía no has pedido esta pista.';
@@ -460,6 +465,25 @@
         renderMatrix();
     }
 
+    /* La pista bloqueada no puede atenuarse hasta dejar el texto por debajo de
+       4.5:1 (WCAG 2.2 AA). En su lugar se marca con borde discontinuo y un
+       fondo más tenue que el de una pista ya disponible: sigue distinguiéndose
+       sin perder legibilidad. */
+    const CLASES_PISTA_BLOQUEADA = ['border-dashed', 'border-white/10', 'bg-white/[0.02]'];
+    const CLASES_PISTA_DISPONIBLE = ['border-white/5', 'bg-white/5'];
+
+    function bloquearPista(id) {
+        const caja = document.getElementById(id);
+        caja.classList.add(...CLASES_PISTA_BLOQUEADA);
+        caja.classList.remove(...CLASES_PISTA_DISPONIBLE);
+    }
+
+    function desbloquearPista(id) {
+        const caja = document.getElementById(id);
+        caja.classList.remove(...CLASES_PISTA_BLOQUEADA);
+        caja.classList.add(...CLASES_PISTA_DISPONIBLE);
+    }
+
     function revealNextClue() {
         playSound('click');
         recordInteractionLatency();
@@ -467,12 +491,12 @@
         if (pistaActual === 1) {
             pistaActual = 2;
             score -= 25;
-            document.getElementById('wrapper-detonante').classList.remove('opacity-25');
+            desbloquearPista('wrapper-detonante');
             document.getElementById('clue-detonante').textContent = emocionSecreta.detonante;
         } else if (pistaActual === 2) {
             pistaActual = 3;
             score -= 25;
-            document.getElementById('wrapper-cognitivo').classList.remove('opacity-25');
+            desbloquearPista('wrapper-cognitivo');
             document.getElementById('clue-cognitivo').textContent = emocionSecreta.cognitivo;
 
             const btnPista = document.getElementById('btn-next-clue');

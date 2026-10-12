@@ -21,7 +21,7 @@
          demasiado: parpadea por confirmación, no por urgencia. --}}
     @if (session('success'))
         <div role="status"
-             class="mb-5 flex items-start gap-3 rounded-panel border border-accent/30 bg-accent-soft px-4 py-3.5">
+             class="aparece mb-5 flex items-start gap-3 rounded-panel border border-accent/30 bg-accent-soft px-4 py-3.5">
             <i class="fa-solid fa-circle-check mt-0.5 text-[12px] text-accent-text" aria-hidden="true"></i>
             <p class="text-[13px] leading-relaxed text-accent-text">{{ session('success') }}</p>
         </div>

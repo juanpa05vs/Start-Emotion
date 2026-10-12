@@ -88,6 +88,7 @@
         @if (! $consentimiento->incluye(\App\Enums\AlcanceConsentimiento::Registros))
             <div class="surface rounded-panel">
                 <x-estado-vacio
+                    :nivel="3"
                     icono="fa-lock"
                     titulo="No autorizó compartir sus registros"
                     mensaje="Compartió contigo otras cosas, pero los registros diarios quedan fuera. Para verlos tiene que retirarlos de la lista de autorizaciones y volver a aceptarlos." />
@@ -95,6 +96,7 @@
         @elseif ($registros->isEmpty())
             <div class="surface rounded-panel">
                 <x-estado-vacio
+                    :nivel="3"
                     icono="fa-inbox"
                     titulo="Todavía no ha registrado cómo se ha sentido"
                     mensaje="Cuando anote su primera emoción aparecerá aquí. No hay nada que revisar de momento." />
@@ -159,6 +161,7 @@
         @if (! $consentimiento->incluye(\App\Enums\AlcanceConsentimiento::Evaluaciones))
             <div class="surface rounded-panel">
                 <x-estado-vacio
+                    :nivel="3"
                     icono="fa-lock"
                     titulo="No autorizó compartir sus evaluaciones"
                     mensaje="Las respuestas de los cuestionarios SISCO son de las más delicadas que hay aquí, y son suyas: compartirlas es una decisión suya." />
@@ -166,6 +169,7 @@
         @elseif ($evaluaciones->isEmpty())
             <div class="surface rounded-panel">
                 <x-estado-vacio
+                    :nivel="3"
                     icono="fa-inbox"
                     titulo="No ha completado ninguna evaluación"
                     mensaje="La encuesta SISCO aparece en su propio menú cuando quiera hacerla." />
@@ -235,6 +239,7 @@
         @if (! $consentimiento->incluye(\App\Enums\AlcanceConsentimiento::Juego))
             <div class="surface rounded-panel">
                 <x-estado-vacio
+                    :nivel="3"
                     icono="fa-lock"
                     titulo="No autorizó compartir su actividad en el juego"
                     mensaje="Compartía el tiempo que juega y su ritmo de respuesta, no lo que escribió en el chat del curso ni sus notas de clase." />
@@ -242,6 +247,7 @@
         @elseif ($telemetrias->isEmpty())
             <div class="surface rounded-panel">
                 <x-estado-vacio
+                    :nivel="3"
                     icono="fa-inbox"
                     titulo="No ha completado ninguna partida"
                     mensaje="«Código Anómalo» está en su menú de actividades. Cada partida terminada aparece aquí." />

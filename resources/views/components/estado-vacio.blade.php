@@ -5,6 +5,7 @@
     'detalle'  => null,
     'accion'   => null,
     'url'      => null,
+    'nivel'    => 2,
 ])
 
 {{--
@@ -28,9 +29,9 @@
         <i class="fa-solid {{ $icono }} text-lg text-accent-text" aria-hidden="true"></i>
     </div>
 
-    <h3 class="font-orbitron text-base font-bold tracking-tight adaptive-title">
+    <h{{ $nivel }} class="font-orbitron text-base font-bold tracking-tight adaptive-title">
         {{ $titulo }}
-    </h3>
+    </h{{ $nivel }}>
 
     @if ($mensaje)
         <p class="mt-2.5 max-w-lg text-[13px] leading-relaxed text-gray-400">

@@ -2,6 +2,8 @@
 
 @section('title', 'Historial | S-Emotion')
 
+@section('description', 'Consulta tus anotaciones emocionales: qué sentías, con qué intensidad, el contexto y la nota que dejaste en cada registro.')
+
 @section('content')
     <div class="mb-7 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div>
@@ -89,7 +91,7 @@
                         <th scope="col" class="px-6 py-3.5 text-right text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">Acciones</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-white/5 text-sm">
+                <tbody class="aparece-grupo divide-y divide-white/5 text-sm">
                     @forelse($historial as $item)
                         @php
                             /* Color de la emoción. Aquí el color NO es decoración:
@@ -139,6 +141,7 @@
                         <tr class="group transition-colors hover:bg-white/[0.02]">
                             <td class="px-6 py-4 text-center">
                                 <input type="checkbox" name="ids[]" value="{{ $item->id }}"
+                                       aria-label="Seleccionar la anotación de {{ $item->created_at->format('d/m/Y') }} a las {{ $item->created_at->format('H:i') }} ({{ $etiqueta }})"
                                        class="record-checkbox h-4 w-4 shrink-0 rounded-control border-white/20 bg-black accent-accent">
                             </td>
 
@@ -159,7 +162,7 @@
                             <td class="px-6 py-4">
                                 <div class="flex max-w-[14rem] items-center gap-3">
                                     <div class="h-1.5 flex-1 overflow-hidden rounded-pill border border-white/5 bg-white/5">
-                                        <div class="h-full {{ $barColor }}" style="width: {{ $item->energia }}%"></div>
+                                        <div class="medidor-relleno h-full {{ $barColor }}" style="--valor: {{ $item->energia / 100 }}"></div>
                                     </div>
                                     <span class="w-11 text-right text-[12px] tabular-nums text-gray-400">{{ $item->energia }}%</span>
                                 </div>
@@ -172,7 +175,8 @@
                                      terminal, no un estado. --}}
                                 <div class="flex items-center justify-end gap-1.5">
                                     <button type="button"
-                                            onclick="toggleTelemetryPayload({{ $item->id }})"
+                                            data-plegable
+                                            data-plegable-objetivo="payload-row-{{ $item->id }}"
                                             aria-expanded="false"
                                             aria-controls="payload-row-{{ $item->id }}"
                                             class="inline-flex items-center gap-1.5 rounded-control border border-transparent px-2.5 py-1.5 text-[11px] font-semibold text-gray-400 transition-colors hover:border-accent/30 hover:bg-accent/10 hover:text-accent-text">
@@ -193,7 +197,7 @@
                         {{-- Detalle desplegable: contexto, nota y lectura. --}}
                         <tr id="payload-row-{{ $item->id }}" class="hidden bg-black/60">
                             <td colspan="5" class="px-6 py-5">
-                                <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+                                <div class="grid grid-cols-1 gap-5 md:grid-cols-3" data-plegable-cuerpo>
 
                                     <div class="rounded-control border border-white/5 bg-white/[0.02] p-3.5">
                                         <p class="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">
@@ -254,24 +258,6 @@
 
 @push('scripts')
 <script>
-    /* Despliega el detalle de una anotación.
-
-       El botón lleva `aria-expanded` y la flecha gira, para que se sepa si el
-       detalle está abierto o cerrado sin leer el texto. Antes el rótulo era
-       siempre el mismo —da igual si estaba abierto o cerrado— y quien abría la
-       fila no recibía ninguna confirmación. */
-    function toggleTelemetryPayload(id) {
-        const fila = document.getElementById(`payload-row-${id}`);
-        if (!fila) return;
-
-        const boton = document.querySelector(`[aria-controls="payload-row-${id}"]`);
-        const abierta = fila.classList.toggle('hidden') === false;
-
-        if (boton) {
-            boton.setAttribute('aria-expanded', String(abierta));
-            boton.querySelector('i').style.transform = abierta ? 'rotate(180deg)' : '';
-        }
-    }
 
     document.addEventListener('DOMContentLoaded', function () {
         const selectAll = document.getElementById('select-all');

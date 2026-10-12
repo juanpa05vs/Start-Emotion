@@ -3,7 +3,7 @@
 @section('title', 'Comentarios | S-Emotion')
 
 @section('content')
-<div class="max-w-4xl">
+<div class="aparece-grupo max-w-4xl">
 
     {{-- Los comentarios se leen en lista, no en rejilla de tres columnas.
 

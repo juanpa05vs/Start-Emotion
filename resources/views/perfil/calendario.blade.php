@@ -69,7 +69,7 @@
             @endforeach
         </div>
 
-        <div class="grid grid-cols-7 gap-1.5 sm:gap-2.5">
+        <div class="aparece-grupo grid grid-cols-7 gap-1.5 sm:gap-2.5">
             @foreach($rangoDias as $dia)
                 @if($dia === null)
                     {{-- Celda de relleno: alinea el día 1 con su columna (Lun..Dom) --}}
