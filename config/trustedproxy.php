@@ -11,18 +11,17 @@ return [
     | aplicación confiará para leer las cabeceras X-Forwarded-* (IP real,
     | esquema HTTPS, host, etc.).
     |
-    | Por defecto está VACÍO: no se confía en ningún proxy. Antes se usaba '*'
-    | en bootstrap/app.php, lo que permitía que un cliente falsificara su IP o
-    | el esquema de la petición.
+    | Por defecto es '*': Laravel confía únicamente en el proxy que conecta
+    | directamente con el contenedor (el de Render), NO en cualquier origen.
+    | En Laravel 11, '*' se traduce a "confiar solo en REMOTE_ADDR", no a
+    | "confiar en todos". Sin esta confianza la app ignora X-Forwarded-Proto
+    | detrás del proxy TLS y genera URLs con esquema http://.
     |
-    | Si la aplicación va detrás de un balanceador que termina el TLS, define
-    | la variable de entorno TRUSTED_PROXIES, p. ej.:
+    | Para fijar las IPs/rangos del balanceador, define TRUSTED_PROXIES, p. ej.:
     |   TRUSTED_PROXIES=10.0.0.0/8,172.16.0.0/12
-    | El valor especial '*' confía únicamente en el par que realiza la petición
-    | (el proxy inmediato), no en cualquier origen.
     |
     */
 
-    'proxies' => env('TRUSTED_PROXIES'),
+    'proxies' => env('TRUSTED_PROXIES') ?: '*',
 
 ];

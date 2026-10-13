@@ -169,7 +169,10 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE', false),
+    // Secure activado por defecto en producción (HTTPS) y desactivado en
+    // local, para no romper http://127.0.0.1:8000. Puede forzarse con la
+    // variable de entorno SESSION_SECURE_COOKIE=true|false.
+    'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV', 'production') === 'production'),
 
     /*
     |--------------------------------------------------------------------------
