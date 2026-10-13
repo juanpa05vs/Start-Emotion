@@ -44,7 +44,13 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # Configuración de nginx, PHP y supervisor.
 COPY nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
+COPY docker/php-fpm-pool.conf /usr/local/etc/php-fpm.d/zz-app-pool.conf
 COPY docker/php.ini /usr/local/etc/php/conf.d/zz-app.ini
+
+# Validación de la configuración de PHP-FPM durante el build.
+# `php-fpm -t` solo analiza la configuración: no arranca el servidor ni abre
+# conexiones. Si el pool es inválido o hay conflictos, el build falla aquí.
+RUN php-fpm -t
 
 # Directorios de escritura y caché de vistas (config se cachea en runtime).
 RUN mkdir -p storage/framework/sessions storage/framework/views \
@@ -65,4 +71,4 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD wget -qO- http://127.0.0.1/up || exit 1
 
-ENTRYPOINT ["sh", "-c", "php artisan config:cache && (php artisan storage:link || true) && php artisan migrate --force && exec supervisord -c /etc/supervisord.conf"]
+ENTRYPOINT ["sh", "-c", "php artisan config:cache && (php artisan storage:link || true) && exec supervisord -c /etc/supervisord.conf"]
